@@ -14,9 +14,7 @@ export class LivenessHint extends TailwindElement {
   render() {
     return this.show
       ? html`
-          <div
-            class="fixed inset-0 top-0 left-0 z-10 mx-auto max-w-lg overflow-y-auto bg-white"
-          >
+          <div class="fixed inset-0 z-10 mx-auto max-w-[400px] overflow-y-auto">
             <div
               class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0"
             >
@@ -67,13 +65,13 @@ export class LivenessHint extends TailwindElement {
 @customElement("icon-detail")
 class IconDetail extends TailwindElement {
   @property({ type: String })
-  src: string = "";
+  src = "";
 
   render() {
     return html`
       <div class="flex flex-row items-center gap-[20px]">
         <img src=${this.src} alt="icon" class="h-[35px] w-[35px]" />
-        <p class="py-4 text-sm text-gray-800">
+        <p class="flex-1 py-4 text-sm text-gray-800">
           <slot></slot>
         </p>
       </div>
