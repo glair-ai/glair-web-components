@@ -1,6 +1,5 @@
 import { html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
-import "lit-webcam";
+import { customElement, state } from "lit/decorators.js";
 
 import { TailwindElement } from "../shared/tailwind.element";
 import "./liveness-hint";
@@ -9,6 +8,7 @@ import "./please-wait";
 import "./success";
 import "./failure";
 import "./loading-dots";
+import "./webcam";
 
 import OVERLAY from "../assets/images/passive_overlay.png";
 import IC_BACK_BTN from "../assets/icon/ic_back_btn.svg";
@@ -199,17 +199,27 @@ export class PassiveLiveness extends TailwindElement {
     const loading = this.loading;
 
     function camera() {
+      // <lit-webcam
+      //   height=${Math.max(frameSize, MAX_FRAME_SIZE)}
+      //   width=${frameSize}
+      //   class="bg-black"
+      //   .videoConstraints="${{
+      //     height: Math.max(frameSize, MAX_FRAME_SIZE),
+      //     width: frameSize,
+      //     facingMode: "user",
+      //   }}"
+      // ></lit-webcam>
       return html`
-        <lit-webcam
-          height=${Math.max(frameSize, MAX_FRAME_SIZE)}
-          width=${frameSize}
-          class="bg-black"
+        <webcam-gdp
+          class="bg-gray-500"
+          width=${480}
+          height=${480}
           .videoConstraints="${{
             height: Math.max(frameSize, MAX_FRAME_SIZE),
             width: frameSize,
             facingMode: "user",
           }}"
-        ></lit-webcam>
+        ></webcam-gdp>
         <div class="absolute top-[15%] left-[0%] mx-16 my-auto">
           <img
             src=${OVERLAY}
@@ -317,7 +327,7 @@ export class PassiveLiveness extends TailwindElement {
 
   render() {
     return html`
-      <liveness-hint></liveness-hint>
+      <!-- <liveness-hint></liveness-hint> -->
       <div class="flex justify-center">
         <div
           class="flex-start align-center flex min-h-[${this.windowSize

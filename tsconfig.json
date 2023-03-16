@@ -3,6 +3,7 @@
     "module": "ESNext",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "declaration": true,
+    "target": "ES5",
     "emitDeclarationOnly": true,
     "outDir": "./types",
     "strict": true,
