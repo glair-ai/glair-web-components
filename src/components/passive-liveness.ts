@@ -1,5 +1,6 @@
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import { createRef } from "lit/directives/ref.js";
 
 import { TailwindElement } from "../shared/tailwind.element";
 import "./liveness-hint";
@@ -15,6 +16,7 @@ import IC_BACK_BTN from "../assets/icon/ic_back_btn.svg";
 import IC_CAMERA_BTN from "../assets/icon/ic_camera_btn.svg";
 import POWERED_BY_DARK from "../assets/images/powered_by_dark.png";
 import POWERED_BY_WHITE from "../assets/images/powered_by_white.png";
+import { getScreenshot } from "../utils";
 
 const MAX_FRAME_SIZE = 480;
 
@@ -139,7 +141,9 @@ export class PassiveLiveness extends TailwindElement {
     //   return;
     // }
     // this.setSuccess(result.status === "success" ? true : false);
-    this.setSuccess(true);
+
+    // this.setSuccess(true);
+    getScreenshot(this.cameraRef);
 
     const sleep = () => new Promise((resolve) => setTimeout(resolve, 500));
     await sleep();
@@ -163,6 +167,9 @@ export class PassiveLiveness extends TailwindElement {
     // if (!cancelUrl) return;
     // router.push(cancelUrl);
   }
+
+  @state()
+  cameraRef = createRef();
 
   // VIEW
   ResultView() {
@@ -197,18 +204,9 @@ export class PassiveLiveness extends TailwindElement {
     const url = this.image.url;
     const isCameraAllowed = this.isCameraAllowed;
     const loading = this.loading;
+    const cameraRef = this.cameraRef;
 
     function camera() {
-      // <lit-webcam
-      //   height=${Math.max(frameSize, MAX_FRAME_SIZE)}
-      //   width=${frameSize}
-      //   class="bg-black"
-      //   .videoConstraints="${{
-      //     height: Math.max(frameSize, MAX_FRAME_SIZE),
-      //     width: frameSize,
-      //     facingMode: "user",
-      //   }}"
-      // ></lit-webcam>
       return html`
         <webcam-gdp
           class="bg-gray-500"
@@ -219,6 +217,7 @@ export class PassiveLiveness extends TailwindElement {
             width: frameSize,
             facingMode: "user",
           }}"
+          .videoEl=${cameraRef}
         ></webcam-gdp>
         <div class="absolute top-[15%] left-[0%] mx-16 my-auto">
           <img

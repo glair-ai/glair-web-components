@@ -19,7 +19,7 @@ export class Webcam extends TailwindElement {
   @property({ type: MediaStream })
   stream: MediaStream | undefined = undefined;
   @property({ type: Object, state: true })
-  videoEl: HTMLVideoElement = createRef();
+  videoEl = createRef();
   @property({ type: Boolean, attribute: "own-stream" })
   ownStream = false;
   @property({ type: Boolean, state: true })
@@ -32,6 +32,8 @@ export class Webcam extends TailwindElement {
   label = "";
   @property({ type: Boolean, attribute: "controls" })
   controls = false;
+  @property()
+  getScreenshot = (screenshot: string) => {};
 
   @state()
   src = "";
@@ -126,6 +128,7 @@ export class Webcam extends TailwindElement {
   getScreenshot() {
     console.log("getScreenshot init");
     const canvas = this.getCanvas();
+    console.log(canvas && canvas.toDataURL("image/jpeg", 0.92));
     return canvas && canvas.toDataURL("image/jpeg", 0.92);
   }
 
@@ -151,7 +154,7 @@ export class Webcam extends TailwindElement {
     console.log("getCanvas draw");
 
     if (ctx && canvas) {
-      ctx.drawImage(this.videoEl.srcObject, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(this.videoEl.value, 0, 0, canvas.width, canvas.height);
     }
 
     console.log("getCanvas done draw");
@@ -271,7 +274,6 @@ export class Webcam extends TailwindElement {
           playsinline
         ></video>
       </div>
-      <button @click=${this.getScreenshot}>ClickMe</button>
     `;
   }
 }

@@ -17,8 +17,7 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "lit": "^2.6.1",
-    "lit-webcam": "^1.0.0"
+    "lit": "^2.6.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
