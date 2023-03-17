@@ -1,8 +1,8 @@
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
-import { TailwindElement } from "../shared/tailwind.element";
+import { TailwindElement } from "./tailwind.element";
 
-@customElement("loading-spinner")
+@customElement("glair-loading-spinner")
 export class LoadingSpinner extends TailwindElement {
   render() {
     return html`
@@ -28,6 +28,6 @@ export class LoadingSpinner extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "loading-spinner": LoadingSpinner;
+    "glair-loading-spinner": LoadingSpinner;
   }
 }

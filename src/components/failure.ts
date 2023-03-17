@@ -1,10 +1,10 @@
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { TailwindElement } from "../shared/tailwind.element";
+import { TailwindElement } from "./tailwind.element";
 
 import FAILURE from "../assets/images/failure.png";
 
-@customElement("failure-view")
+@customElement("glair-failure-view")
 export class Failure extends TailwindElement {
   @property({ type: String })
   title = "Verification Failed";
@@ -41,6 +41,6 @@ export class Failure extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "failure-view": Failure;
+    "glair-failure-view": Failure;
   }
 }

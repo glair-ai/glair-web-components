@@ -9,10 +9,10 @@
     <script type="module" src="/src/components/passive-liveness.ts"></script>
   </head>
   <body>
-    <passive-liveness> </passive-liveness>
+    <glair-passive-liveness> </glair-passive-liveness>
   </body>
   <script>
-    const pl = document.querySelector("passive-liveness");
+    const pl = document.querySelector("glair-passive-liveness");
     pl.addEventListener("onscreenshot", (event) => {
       console.log(event.detail.payload);
     });

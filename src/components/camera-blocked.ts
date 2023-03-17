@@ -1,8 +1,8 @@
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import { TailwindElement } from "../shared/tailwind.element";
+import { TailwindElement } from "./tailwind.element";
 
-@customElement("camera-blocked")
+@customElement("glair-camera-blocked")
 export class CameraBlocked extends TailwindElement {
   @state()
   protected dismissed = false;
@@ -34,6 +34,6 @@ export class CameraBlocked extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "camera-blocked": CameraBlocked;
+    "glair-camera-blocked": CameraBlocked;
   }
 }

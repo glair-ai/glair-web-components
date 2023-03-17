@@ -1,8 +1,8 @@
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
-import { TailwindElement } from "../shared/tailwind.element";
+import { TailwindElement } from "./tailwind.element";
 
-@customElement("loading-dots")
+@customElement("glair-loading-dots")
 export class LoadingDots extends TailwindElement {
   render() {
     return html`
@@ -18,6 +18,6 @@ export class LoadingDots extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "loading-dots": LoadingDots;
+    "glair-loading-dots": LoadingDots;
   }
 }

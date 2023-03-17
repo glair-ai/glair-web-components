@@ -1,11 +1,11 @@
 import { html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ref, createRef } from "lit/directives/ref.js";
 
-import { TailwindElement } from "../shared/tailwind.element.js";
+import { TailwindElement } from "./tailwind.element";
 
-@customElement("webcam-gdp")
+@customElement("glair-webcam")
 export class Webcam extends TailwindElement {
   @property({ type: Boolean, reflect: true })
   hasMedia = false;
@@ -79,7 +79,6 @@ export class Webcam extends TailwindElement {
   }
 
   /** @param {MediaStream} stream */
-
   handleUserMedia(stream: object) {
     this.stream = stream;
 
@@ -115,8 +114,7 @@ export class Webcam extends TailwindElement {
    * @param {String} eventName
    * @param {Object} payload
    */
-
-  dispatch(eventName: any, payload = {}) {
+  dispatch(eventName: string, payload: object = {}) {
     this.dispatchEvent(
       new CustomEvent(eventName, {
         detail: { payload },
@@ -148,7 +146,7 @@ export class Webcam extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "webcam-gdp": Webcam;
+    "glair-webcam": Webcam;
   }
 }
 

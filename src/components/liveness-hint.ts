@@ -1,12 +1,12 @@
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { TailwindElement } from "../shared/tailwind.element";
+import { TailwindElement } from "./tailwind.element";
 import IC_BULB from "../assets/icon/ic_bulb.svg";
 import IC_CAMERA from "../assets/icon/ic_camera.svg";
 import IC_FACE_MASK from "../assets/icon/ic_face_mask.svg";
 import IC_PEOPLE from "../assets/icon/ic_people.svg";
 
-@customElement("liveness-hint")
+@customElement("glair-liveness-hint")
 export class LivenessHint extends TailwindElement {
   @state()
   protected show = true;
@@ -62,7 +62,7 @@ export class LivenessHint extends TailwindElement {
   }
 }
 
-@customElement("icon-detail")
+@customElement("glair-icon-detail")
 class IconDetail extends TailwindElement {
   @property({ type: String })
   src = "";
@@ -81,7 +81,7 @@ class IconDetail extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "liveness-hint": LivenessHint;
-    "icon-detail": IconDetail;
+    "glair-liveness-hint": LivenessHint;
+    "glair-icon-detail": IconDetail;
   }
 }

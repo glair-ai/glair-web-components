@@ -5,10 +5,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   build: {
     lib: {
-      entry: ["src/components/passive-liveness.ts", "src/tim-camera.ts"],
+      entry: ["src/components/passive-liveness.ts"],
       formats: ["es"],
     },
     emptyOutDir: false,
-    outDir: "lib",
+    outDir: "standalone",
   },
 });

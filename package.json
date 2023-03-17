@@ -1,5 +1,5 @@
 {
-  "name": "web-component",
+  "name": "glair-web-components",
   "private": true,
   "type": "module",
   "version": "0.0.0",
@@ -18,10 +18,9 @@
   ],
   "scripts": {
     "dev": "vite",
-    "clean": "rm -rf ./lib",
+    "clean": "rm -rf ./lib ./standalone",
     "move-declaration": "mv lib/components/* lib/ && rm -rf lib/components lib/utils",
-    "build": "npm run clean && tsc && vite build && npm run move-declaration",
-    "build:standalone": "npm run clean && tsc && vite build --config vite.standalone.ts"
+    "build": "npm run clean && tsc && vite build && npm run move-declaration && vite build --config vite.standalone.ts"
   },
   "dependencies": {
     "lit": "^2.6.1"

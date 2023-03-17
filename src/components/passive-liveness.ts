@@ -1,8 +1,8 @@
 import { html } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { createRef } from "lit/directives/ref.js";
 
-import { TailwindElement } from "../shared/tailwind.element";
+import { TailwindElement } from "./tailwind.element";
 import "./liveness-hint";
 import "./camera-blocked";
 import "./please-wait";
@@ -15,12 +15,11 @@ import OVERLAY from "../assets/images/passive_overlay.png";
 import IC_BACK_BTN from "../assets/icon/ic_back_btn.svg";
 import IC_CAMERA_BTN from "../assets/icon/ic_camera_btn.svg";
 import POWERED_BY_DARK from "../assets/images/powered_by_dark.png";
-import POWERED_BY_WHITE from "../assets/images/powered_by_white.png";
 import { getScreenshot } from "../utils";
 
 const MAX_FRAME_SIZE = 480;
 
-@customElement("passive-liveness")
+@customElement("glair-passive-liveness")
 export class PassiveLiveness extends TailwindElement {
   @property({ type: Function })
   onscreenshot = (base64: string) => {
@@ -122,43 +121,14 @@ export class PassiveLiveness extends TailwindElement {
   async handleOnSubmit() {
     this.setLoading(true);
 
-    // const screenshot = webcam.current?.getScreenshot() || "";
-    // let fetchScreenshot;
-    // if (screenshot) {
-    //   this.setImage({ ...this.image, url: screenshot });
-    //   this.setCameraOn(false);
-    //   fetchScreenshot = await fetch(screenshot);
-    // } else {
-    //   fetchScreenshot = await fetch(this.image.url);
-    // }
-
-    // const formData = new FormData();
-    // formData.append("image", await fetchScreenshot.blob(), "image");
-    // formData.append("sid", sid as string);
-
-    // const response = await fetch("/api/passive-liveness", {
-    //   method: "POST",
-    //   body: formData,
-    // });
-
-    // const result: PassiveLivenessResult = await response.json();
-    // if (!result.result) {
-    //   this.setSuccess(false);
-    //   this.setLoading(false);
-    //   console.log("error:", result);
-    //   return;
-    // }
-    // this.setSuccess(result.status === "success" ? true : false);
-
-    // this.setSuccess(true);
     const base64 = getScreenshot(this.cameraRef);
-    this.dispatch("onscreenshot", base64);
+    const blob = await this.base64ToBlob(base64);
+    this.dispatch("onscreenshot", blob);
 
     const sleep = () => new Promise((resolve) => setTimeout(resolve, 500));
     await sleep();
 
     this.setLoading(false);
-    // console.log(result);
   }
 
   dispatch(eventName: any, payload = {}) {
@@ -169,6 +139,11 @@ export class PassiveLiveness extends TailwindElement {
         bubbles: true,
       })
     );
+  }
+
+  async base64ToBlob(base64data: string) {
+    const base64Response = await fetch(base64data);
+    return await base64Response.blob();
   }
 
   handleSuccess() {
@@ -192,12 +167,12 @@ export class PassiveLiveness extends TailwindElement {
     return html`
       <div class="mt-6 flex h-full flex-col">
         ${this.success === true
-          ? html`<success-view
+          ? html`<glair-success-view
               title="Liveness Verification Successful"
               message="Successfully verified as a real person"
               redirect=${this.handleSuccess}
-            ></success-view>`
-          : html` <failure-view
+            ></glair-success-view>`
+          : html` <glair-failure-view
               title="Liveness Verification Failed"
               message="Cannot identified as a real person"
               retry=${this.handleFailure}
@@ -224,13 +199,13 @@ export class PassiveLiveness extends TailwindElement {
 
     function camera() {
       return html`
-        <webcam-gdp
+        <glair-webcam
           class="bg-gray-500"
           width=${480}
           height=${480}
           facingMode="user"
           .videoEl=${cameraRef}
-        ></webcam-gdp>
+        ></glair-webcam>
         <div class="absolute top-[15%] left-[0%] mx-16 my-auto">
           <img
             src=${OVERLAY}
@@ -258,8 +233,10 @@ export class PassiveLiveness extends TailwindElement {
       <div class="relative">
         ${this.cameraOn ? camera() : image()}
         <div class="absolute top-[40%] left-[50%] translate-x-[-50%]">
-          ${!isCameraAllowed ? html`<camera-blocked></camera-blocked>` : ""}
-          ${loading ? html`<please-wait></please-wait>` : ""}
+          ${!isCameraAllowed
+            ? html`<glair-camera-blocked></glair-camera-blocked>`
+            : ""}
+          ${loading ? html`<glair-please-wait></glair-please-wait>` : ""}
         </div>
         <div class="absolute top-[2%] left-[2%]">
           <img
@@ -280,7 +257,7 @@ export class PassiveLiveness extends TailwindElement {
 
     function Loading() {
       return html`
-        <loading-dots></loading-dots>
+        <glair-loading-dots></glair-loading-dots>
         <p class="text-white">Verification is in progress</p>
       `;
     }
@@ -309,14 +286,6 @@ export class PassiveLiveness extends TailwindElement {
         class="z-9 -mt-6 flex min-h-[175px] w-full flex-1 basis-auto flex-col items-center gap-4 rounded-t-3xl bg-[#121212] py-6 lg:mt-0 lg:rounded-none"
       >
         ${loading ? Loading() : Instruction()}
-        <div class="mt-6 block lg:hidden">
-          <img
-            src=${POWERED_BY_WHITE}
-            height=${150}
-            width=${150}
-            alt="pwrd_by_glair_w"
-          />
-        </div>
       </div>
     `;
   }
@@ -350,7 +319,6 @@ export class PassiveLiveness extends TailwindElement {
               >
                 ${this.WebcamView()}
                 ${this.isCameraAllowed ? this.InstructionView() : ""}
-                ${this.FooterView()}
               </div>`
             : html` ${this.ResultView()} `}
         </div>
@@ -361,6 +329,6 @@ export class PassiveLiveness extends TailwindElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "passive-liveness": PassiveLiveness;
+    "glair-passive-liveness": PassiveLiveness;
   }
 }
