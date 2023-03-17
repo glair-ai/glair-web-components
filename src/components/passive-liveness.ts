@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { createRef } from "lit/directives/ref.js";
 
 import { TailwindElement } from "../shared/tailwind.element";
@@ -22,6 +22,11 @@ const MAX_FRAME_SIZE = 480;
 
 @customElement("passive-liveness")
 export class PassiveLiveness extends TailwindElement {
+  @property({ type: Function })
+  onscreenshot = (base64: string) => {
+    console.log("default", base64.substring(0, 50));
+  };
+
   @state()
   protected frameSize = 0;
   setFrameSize(size: number) {
@@ -74,6 +79,9 @@ export class PassiveLiveness extends TailwindElement {
   setLoading(value: boolean) {
     this.loading = value;
   }
+
+  @state()
+  cameraRef = createRef();
 
   // FUNCTIONS
   connectedCallback() {
@@ -143,13 +151,24 @@ export class PassiveLiveness extends TailwindElement {
     // this.setSuccess(result.status === "success" ? true : false);
 
     // this.setSuccess(true);
-    getScreenshot(this.cameraRef);
+    const base64 = getScreenshot(this.cameraRef);
+    this.dispatch("onscreenshot", base64);
 
     const sleep = () => new Promise((resolve) => setTimeout(resolve, 500));
     await sleep();
 
     this.setLoading(false);
     // console.log(result);
+  }
+
+  dispatch(eventName: any, payload = {}) {
+    this.dispatchEvent(
+      new CustomEvent(eventName, {
+        detail: { payload },
+        composed: true,
+        bubbles: true,
+      })
+    );
   }
 
   handleSuccess() {
@@ -167,9 +186,6 @@ export class PassiveLiveness extends TailwindElement {
     // if (!cancelUrl) return;
     // router.push(cancelUrl);
   }
-
-  @state()
-  cameraRef = createRef();
 
   // VIEW
   ResultView() {
@@ -212,11 +228,7 @@ export class PassiveLiveness extends TailwindElement {
           class="bg-gray-500"
           width=${480}
           height=${480}
-          .videoConstraints="${{
-            height: Math.max(frameSize, MAX_FRAME_SIZE),
-            width: frameSize,
-            facingMode: "user",
-          }}"
+          facingMode="user"
           .videoEl=${cameraRef}
         ></webcam-gdp>
         <div class="absolute top-[15%] left-[0%] mx-16 my-auto">

@@ -1,9 +1,7 @@
-// @ts-nocheck
 import { Ref } from "lit/directives/ref";
 
 export function getScreenshot(ref: Ref<Element>) {
   const canvas = getCanvas(ref);
-  console.log(canvas && canvas.toDataURL("image/jpeg", 0.92));
   return canvas && canvas.toDataURL("image/jpeg", 0.92);
 }
 
@@ -16,13 +14,15 @@ function getCanvas(ref: Ref<Element>) {
   canvas.height = canvasHeight;
   let ctx = canvas.getContext("2d");
 
-  console.log("getCanvas draw");
-
   if (ctx && canvas && ref !== null && ref.value !== undefined) {
-    ctx.drawImage(ref.value, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+      ref.value as HTMLVideoElement,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
   }
-
-  console.log("getCanvas done draw");
 
   return canvas;
 }
