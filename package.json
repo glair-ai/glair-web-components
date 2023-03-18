@@ -1,8 +1,23 @@
 {
-  "name": "glair-web-components",
-  "private": true,
+  "name": "@glair/glair-web-components",
+  "license": "MIT",
+  "version": "0.0.1-beta.0",
+  "description": "A collection of GLAIR's web components",
+  "keywords": [
+    "glair",
+    "vision",
+    "ocr",
+    "face biometric",
+    "ekyc",
+    "planogram",
+    "paperless"
+  ],
+  "homepage": "https://github.com/glair-ai/glair-web-components#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/glair-ai/glair-web-components.git"
+  },
   "type": "module",
-  "version": "0.0.0",
   "main": "lib/index.js",
   "module": "lib/index.js",
   "exports": {
@@ -14,7 +29,8 @@
   },
   "types": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "standalone"
   ],
   "scripts": {
     "dev": "vite",
