@@ -1,0 +1,52 @@
+{
+  "name": "@glair/glair-web-components",
+  "license": "MIT",
+  "version": "0.0.1-beta.0",
+  "description": "A collection of GLAIR's web components",
+  "keywords": [
+    "glair",
+    "vision",
+    "ocr",
+    "face biometric",
+    "ekyc",
+    "planogram",
+    "paperless"
+  ],
+  "homepage": "https://github.com/glair-ai/glair-web-components#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/glair-ai/glair-web-components.git"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./lib/*": {
+      "types": "./lib/*.d.ts",
+      "default": "./lib/*.js"
+    }
+  },
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "standalone"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "clean": "rm -rf ./lib ./standalone",
+    "move-declaration": "mv lib/components/* lib/ && rm -rf lib/components lib/utils",
+    "build": "npm run clean && tsc && vite build && npm run move-declaration && vite build --config vite.standalone.ts"
+  },
+  "dependencies": {
+    "lit": "^2.6.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.21",
+    "prettier-plugin-tailwindcss": "^0.2.4",
+    "tailwindcss": "^3.2.7",
+    "typescript": "^4.9.3",
+    "vite": "^4.1.0"
+  }
+}
