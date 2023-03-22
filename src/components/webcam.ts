@@ -4,6 +4,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { ref, createRef } from "lit/directives/ref.js";
 
 import { TailwindElement } from "./tailwind.element";
+import OVERLAY from "../assets/images/passive_overlay.png";
 
 @customElement("glair-webcam")
 export class Webcam extends TailwindElement {
@@ -17,6 +18,8 @@ export class Webcam extends TailwindElement {
   ownStream = false;
   @property({ type: Boolean, state: true })
   loading = true;
+  @property({ type: Boolean })
+  mirrored = false;
 
   @property({ type: Number, attribute: "width" })
   width = 480;
@@ -27,28 +30,11 @@ export class Webcam extends TailwindElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    if (!hasGetUserMedia()) {
-      this.dispatch("onUserMediaError", {
-        error: errorConstants.NOT_SUPPORTED,
-      });
-      return;
-    }
 
-    if (!this.hasMedia) {
-      await this.requestUserMedia();
-    }
+    await this.requestUserMedia();
   }
 
   async updated(changedProps: any) {
-    // super.updated(_changedProperties);
-    if (
-      changedProps.has("videoContrainst") ||
-      changedProps.has("audioConstraints") ||
-      changedProps.has("audio")
-    ) {
-      await this.requestUserMedia();
-    }
-
     if (changedProps.has("stream")) {
       if (this.stream) {
         setTimeout(() => {
@@ -91,22 +77,12 @@ export class Webcam extends TailwindElement {
     } catch (error) {
       console.log("Error occured on webcam", error);
     }
-    this.dispatch("onUserMedia", stream);
   }
 
   /** @param {MediaStream} stream */
   static stopMediaStream(stream: any) {
     if (stream) {
-      if (stream.getVideoTracks && stream.getAudioTracks) {
-        stream
-          .getVideoTracks()
-          .map((track: { stop: () => any }) => track.stop());
-        stream
-          .getAudioTracks()
-          .map((track: { stop: () => any }) => track.stop());
-      } else {
-        stream.stop();
-      }
+      stream.stop();
     }
   }
 
@@ -131,14 +107,30 @@ export class Webcam extends TailwindElement {
 
   render() {
     return html`
-      <div
-        class="${classMap({
-          wrapper: true,
-          loading: this.loading,
-        })}"
-        style="${`width: ${this.width}px; height: ${this.height}px`}"
-      >
-        <video ${ref(this.videoEl)} autoplay muted playsinline></video>
+      <div class="relative">
+        <div
+          class="${classMap({
+            wrapper: true,
+            loading: this.loading,
+          })}"
+          style="${`width: ${this.width}px; height: ${this.height}px`}"
+        >
+          <video
+            ${ref(this.videoEl)}
+            autoplay
+            muted
+            playsinline
+            class="${this.mirrored ? "-scale-x-100" : ""}"
+          ></video>
+        </div>
+        <div class="absolute top-[15%] left-[0%] mx-16 my-auto">
+          <img
+            src=${OVERLAY}
+            height="${this.height}"
+            width="${this.width}"
+            alt="overlay"
+          />
+        </div>
       </div>
     `;
   }
@@ -148,16 +140,4 @@ declare global {
   interface HTMLElementTagNameMap {
     "glair-webcam": Webcam;
   }
-}
-
-const errorConstants = {
-  NOT_SUPPORTED: "NOT_SUPPORTED",
-  PERMISSION_DENIED: "PERMISSION_DENIED",
-  NOT_READABLE: "NOT_READABLE",
-  NOT_FOUND: "NOT_FOUND",
-  DEFAULT_ERROR: "DEFAULT_ERROR",
-};
-
-function hasGetUserMedia() {
-  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 }

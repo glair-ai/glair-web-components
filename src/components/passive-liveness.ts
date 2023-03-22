@@ -11,8 +11,6 @@ import "./failure";
 import "./loading-dots";
 import "./webcam";
 
-import OVERLAY from "../assets/images/passive_overlay.png";
-import IC_BACK_BTN from "../assets/icon/ic_back_btn.svg";
 import IC_CAMERA_BTN from "../assets/icon/ic_camera_btn.svg";
 import POWERED_BY_DARK from "../assets/images/powered_by_dark.png";
 import { getScreenshot } from "../utils";
@@ -121,9 +119,17 @@ export class PassiveLiveness extends TailwindElement {
   async handleOnSubmit() {
     this.setLoading(true);
 
-    const base64 = getScreenshot(this.cameraRef);
-    const blob = await this.base64ToBlob(base64);
-    this.dispatch("onscreenshot", blob);
+    const base64 = getScreenshot({
+      ref: this.cameraRef,
+      width: this.frameSize,
+      height: Math.max(this.frameSize, MAX_FRAME_SIZE),
+      mirrored: true,
+    });
+    console.log(base64.substring(0, 50));
+    // const blob = await this.base64ToBlob(base64);
+    // this.dispatch("onscreenshot", blob);
+
+    // this.setSuccess(false);
 
     const sleep = () => new Promise((resolve) => setTimeout(resolve, 500));
     await sleep();
@@ -201,19 +207,12 @@ export class PassiveLiveness extends TailwindElement {
       return html`
         <glair-webcam
           class="bg-gray-500"
-          width=${480}
-          height=${480}
+          width=${frameSize}
+          height=${Math.max(frameSize, MAX_FRAME_SIZE)}
           facingMode="user"
           .videoEl=${cameraRef}
+          .mirrored=${true}
         ></glair-webcam>
-        <div class="absolute top-[15%] left-[0%] mx-16 my-auto">
-          <img
-            src=${OVERLAY}
-            height="${frameSize}"
-            width="${frameSize}"
-            alt="overlay"
-          />
-        </div>
       `;
     }
 
@@ -237,15 +236,6 @@ export class PassiveLiveness extends TailwindElement {
             ? html`<glair-camera-blocked></glair-camera-blocked>`
             : ""}
           ${loading ? html`<glair-please-wait></glair-please-wait>` : ""}
-        </div>
-        <div class="absolute top-[2%] left-[2%]">
-          <img
-            class="cursor-pointer"
-            src=${IC_BACK_BTN}
-            height=${40}
-            width=${40}
-            alt="ic_back"
-          />
         </div>
       </div>
     `;

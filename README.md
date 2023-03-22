@@ -160,7 +160,7 @@ E.g: You can change the default title for the instruction by changing only the t
 
 You just need to combine all customization to whole customization.
 
-### Passive Liveness Composable API
+### Passive Liveness Composable Component
 
 This section will describe the whole `<glair-passive-liveness>` component
 
@@ -316,3 +316,54 @@ This section will describe the whole `<glair-passive-liveness>` component
   </div>
 </glair-passive-liveness>
 ```
+
+## GLAIR Webcam
+
+### Description
+
+This is a webcam component to display webcam stream with common frame overlay to help pointing face's placement
+
+```html
+<glair-webcam></glair-webcam>
+```
+
+### GLAIR Webcam Composable Component
+
+This section will describe the whole `<glair-webcam>` component
+
+`<glair-webcam>` consist of one children components:
+
+#### Overlay
+
+1. This is the component that display webcam overlay
+1. This is located floating on the webcam
+1. To change this view, you need to specify `slot="overlay"` property on the child component inside `<glair-webcam>`
+
+```html
+<glair-webcam>
+  <img slot="overlay" />
+</glair-webcam>
+```
+
+### GLAIR Webcam Component Detail
+
+At current moment, components that used `<glair-webcam>` need to create a `reference` property and connect the `reference` to `<glair-webcam>` to be able to trigger `onscreenshot` event. For example, `<glair-passive-liveness>` use default `<glair-webcam>` like
+
+```js
+export class GlairPassiveLiveness extends Element {
+  @state()
+  cameraRef = createRef();
+
+  return (
+    <div>
+      <glair-webcam
+        .videoEl=${cameraRef}
+      ></glair-webcam>
+    </div>
+  ;)
+}
+```
+
+### Future Development
+
+1. Update `<glair-webcam>` to be more robust by using custom event to trigger and pass video stream object
