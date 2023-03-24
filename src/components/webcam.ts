@@ -1,6 +1,5 @@
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 import { ref, createRef } from "lit/directives/ref.js";
 
 import { TailwindElement } from "./tailwind.element";
@@ -32,6 +31,7 @@ export class Webcam extends TailwindElement {
     super.connectedCallback();
 
     await this.requestUserMedia();
+    console.log("width", this.width, "height", this.height);
   }
 
   async updated(changedProps: any) {
@@ -52,11 +52,7 @@ export class Webcam extends TailwindElement {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: this.width,
-          height: this.height,
-          facingMode: this.facingMode,
-        },
+        video: true,
       });
       this.handleUserMedia(stream);
     } catch (err) {
@@ -107,20 +103,17 @@ export class Webcam extends TailwindElement {
 
   render() {
     return html`
-      <div class="relative">
-        <div
-          class="${classMap({
-            wrapper: true,
-            loading: this.loading,
-          })}"
-          style="${`width: ${this.width}px; height: ${this.height}px`}"
-        >
+      <div class="relative min-h-[480px] max-w-[480px]">
+        <!-- <div class="h-[300px] w-[300px]"> -->
+        <div class="h-[${this.height}px] w-[${this.width}px] overflow-hidden">
           <video
             ${ref(this.videoEl)}
             autoplay
             muted
             playsinline
-            class="${this.mirrored ? "-scale-x-100" : ""}"
+            class="${this.mirrored
+              ? "-scale-x-100"
+              : ""} relative left-1/2 h-[100%] max-w-none -translate-x-1/2"
           ></video>
         </div>
         <div class="absolute top-[15%] left-[0%] mx-16 my-auto">

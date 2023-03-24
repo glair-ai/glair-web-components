@@ -164,7 +164,19 @@ You just need to combine all customization to whole customization.
 
 This section will describe the whole `<glair-passive-liveness>` component
 
-`<glair-passive-liveness>` consist of three children components:
+`<glair-passive-liveness>` consist of four children components:
+
+#### Liveness Hint
+
+1. This is the component that display liveness hints
+1. This is located as a popup after `<glair-passive-liveness>` first loaded
+1. To change this view, you need to specify `slot="liveness-hint"` property on the child component inside `<glair-passive-liveness>`
+
+```html
+<glair-passive-liveness>
+  <div slot="liveness-hint"></div>
+</glair-passive-liveness>
+```
 
 #### Webcam
 
@@ -172,7 +184,7 @@ This section will describe the whole `<glair-passive-liveness>` component
 1. This is located on upper position
 1. To change this view, you need to specify `slot="webcam"` property on the child component inside `<glair-passive-liveness>`
 1. You can only change the whole webcam component
-1. It's not recommended to change this component because it's link with `<instruction-view>` button to take picture and it's a neutral component with no identifier
+1. It's not recommended to change this component because it's linked with `Instruction` camera button to take picture
 
 ```html
 <glair-passive-liveness>

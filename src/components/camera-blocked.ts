@@ -8,7 +8,7 @@ export class CameraBlocked extends TailwindElement {
   protected dismissed = false;
 
   render() {
-    return this.dismissed
+    return !this.dismissed
       ? html`
           <div
             class="flex w-[325px] flex-col rounded-sm border bg-white py-4 px-8"
@@ -21,7 +21,7 @@ export class CameraBlocked extends TailwindElement {
               <button
                 type="button"
                 class="text-md text-[#009CDE]"
-                onClick="{dismiss}"
+                .onclick=${() => location.reload()}
               >
                 Close
               </button>

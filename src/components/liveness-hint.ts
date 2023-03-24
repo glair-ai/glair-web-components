@@ -23,24 +23,26 @@ export class LivenessHint extends TailwindElement {
               >
                 <div class="mt-2">
                   <h3 class="text-lg font-medium leading-6">
-                    To ease the verification process, please make sure
+                    <slot name="heading">
+                      To ease the verification process, please make sure
+                    </slot>
                   </h3>
                   <div class="mt-2 divide-y">
-                    <icon-detail src=${IC_CAMERA}>
+                    <glair-icon-detail src=${IC_CAMERA}>
                       Grants camera or photo gallery access permission to your
                       browser
-                    </icon-detail>
-                    <icon-detail src=${IC_FACE_MASK}>
+                    </glair-icon-detail>
+                    <glair-icon-detail src=${IC_FACE_MASK}>
                       Do not wear masks, glasses, hats or other accessories that
                       cover your face
-                    </icon-detail>
-                    <icon-detail src=${IC_BULB}>
+                    </glair-icon-detail>
+                    <glair-icon-detail src=${IC_BULB}>
                       Take photo in a place with sufficient lighting, not too
                       dark or too bright
-                    </icon-detail>
-                    <icon-detail src=${IC_PEOPLE}>
+                    </glair-icon-detail>
+                    <glair-icon-detail src=${IC_PEOPLE}>
                       Take photo without anyone else on the screen
-                    </icon-detail>
+                    </glair-icon-detail>
                   </div>
                 </div>
                 <div class="mt-4 flex flex-col items-center">

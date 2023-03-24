@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { createRef } from "lit/directives/ref.js";
 
 import { TailwindElement } from "./tailwind.element";
@@ -19,11 +19,6 @@ const MAX_FRAME_SIZE = 480;
 
 @customElement("glair-passive-liveness")
 export class PassiveLiveness extends TailwindElement {
-  @property({ type: Function })
-  onscreenshot = (base64: string) => {
-    console.log("default", base64.substring(0, 50));
-  };
-
   @state()
   protected frameSize = 0;
   setFrameSize(size: number) {
@@ -44,15 +39,9 @@ export class PassiveLiveness extends TailwindElement {
   }
 
   @state()
-  protected isCameraAllowed = true;
+  protected isCameraAllowed = false;
   setIsCameraAllowed(value: boolean) {
     this.isCameraAllowed = value;
-  }
-
-  @state()
-  protected cameraOn = false;
-  setCameraOn(value: boolean) {
-    this.cameraOn = value;
   }
 
   @state()
@@ -107,7 +96,6 @@ export class PassiveLiveness extends TailwindElement {
       .then((stream) => {
         if (stream.getVideoTracks().length > 0) {
           this.setIsCameraAllowed(true);
-          this.setCameraOn(true);
           this.setImage({ name: "camera", url: "" });
         }
       })
@@ -131,7 +119,7 @@ export class PassiveLiveness extends TailwindElement {
 
     // this.setSuccess(false);
 
-    const sleep = () => new Promise((resolve) => setTimeout(resolve, 500));
+    const sleep = () => new Promise((resolve) => setTimeout(resolve, 2500));
     await sleep();
 
     this.setLoading(false);
@@ -158,7 +146,6 @@ export class PassiveLiveness extends TailwindElement {
   }
 
   handleFailure() {
-    this.setCameraOn(true);
     this.setImage({ name: "", url: "" });
     this.setSuccess(undefined);
   }
@@ -198,13 +185,12 @@ export class PassiveLiveness extends TailwindElement {
 
   WebcamView() {
     const frameSize = this.frameSize;
-    const url = this.image.url;
     const isCameraAllowed = this.isCameraAllowed;
     const loading = this.loading;
     const cameraRef = this.cameraRef;
 
-    function camera() {
-      return html`
+    return html`
+      <div class="relative">
         <glair-webcam
           class="bg-gray-500"
           width=${frameSize}
@@ -213,24 +199,6 @@ export class PassiveLiveness extends TailwindElement {
           .videoEl=${cameraRef}
           .mirrored=${true}
         ></glair-webcam>
-      `;
-    }
-
-    function image() {
-      return html`
-        <img
-          src=${url}
-          height=${frameSize}
-          width=${frameSize}
-          alt="Photo"
-          class="${url ? "visible" : "invisible"}"
-        />
-      `;
-    }
-
-    return html`
-      <div class="relative">
-        ${this.cameraOn ? camera() : image()}
         <div class="absolute top-[40%] left-[50%] translate-x-[-50%]">
           ${!isCameraAllowed
             ? html`<glair-camera-blocked></glair-camera-blocked>`
@@ -254,17 +222,15 @@ export class PassiveLiveness extends TailwindElement {
 
     function Instruction() {
       return html`
-        <div class="flex flex-col items-center gap-1">
-          <p class="text-[18px] font-bold text-white">Take photo</p>
-          <img
-            class="cursor-pointer"
-            src=${IC_CAMERA_BTN}
-            height=${50}
-            width=${50}
-            alt="ic_camera"
-            @click=${handleOnSubmit}
-          />
-        </div>
+        <p class="text-[18px] font-bold text-white">Take photo</p>
+        <img
+          class="cursor-pointer"
+          src=${IC_CAMERA_BTN}
+          height=${50}
+          width=${50}
+          alt="ic_camera"
+          @click=${handleOnSubmit}
+        />
         <p class="mx-8 text-center text-white">
           Make sure your face is clearly visible on the marked area
         </p>
@@ -273,7 +239,7 @@ export class PassiveLiveness extends TailwindElement {
 
     return html`
       <div
-        class="z-9 -mt-6 flex min-h-[175px] w-full flex-1 basis-auto flex-col items-center gap-4 rounded-t-3xl bg-[#121212] py-6 lg:mt-0 lg:rounded-none"
+        class="z-9 flex min-h-[175px] w-full flex-1 basis-auto flex-col items-center gap-4 rounded-t-3xl bg-[#121212] py-6 lg:rounded-none"
       >
         ${loading ? Loading() : Instruction()}
       </div>
@@ -297,7 +263,7 @@ export class PassiveLiveness extends TailwindElement {
 
   render() {
     return html`
-      <!-- <liveness-hint></liveness-hint> -->
+      <!-- <glair-liveness-hint> </glair-liveness-hint> -->
       <div class="flex justify-center">
         <div
           class="flex-start align-center flex min-h-[${this.windowSize
