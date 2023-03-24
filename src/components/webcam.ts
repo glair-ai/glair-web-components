@@ -31,7 +31,6 @@ export class Webcam extends TailwindElement {
     super.connectedCallback();
 
     await this.requestUserMedia();
-    console.log("width", this.width, "height", this.height);
   }
 
   async updated(changedProps: any) {

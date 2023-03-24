@@ -53,7 +53,7 @@ export class LivenessHint extends TailwindElement {
                       this.show = false;
                     }}"
                   >
-                    START
+                    <slot name="button-start-text"> START </slot>
                   </button>
                 </div>
               </div>

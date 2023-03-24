@@ -150,9 +150,9 @@ E.g: You can change the default title for the instruction by changing only the t
 
 ```html
 <glair-passive-liveness>
-  <div slot="instruction">
+  <glair-instruction slot="instruction">
     <div slot="title">Click Camera Button</div>
-  </div>
+  </glair-instruction>
 </glair-passive-liveness>
 ```
 
@@ -166,19 +166,53 @@ This section will describe the whole `<glair-passive-liveness>` component
 
 `<glair-passive-liveness>` consist of four children components:
 
+1. `<glair-liveness-hint>`
+1. `<glair-webcam>`
+1. `<glair-instruction>`
+1. `<glair-result>`
+
 #### Liveness Hint
 
 1. This is the component that display liveness hints
 1. This is located as a popup after `<glair-passive-liveness>` first loaded
 1. To change this view, you need to specify `slot="liveness-hint"` property on the child component inside `<glair-passive-liveness>`
+1. Consists of two composable children
+   1. Heading
+      1. This is the component that display heading description
+      1. Default value: `To ease the verification process, please make sure`
+      1. This is located on the top position
+      1. Can be changed by using `slot="heading"` property on the child component inside component with `slot="liveness-hint"`
+   1. Button Text
+      1. This is the liveness hint button text
+      1. Default value: `START`
+      1. This is located on the bottom position
+      1. Can be changed by using `slot="button-start-text"` property on the child component inside component with `slot="liveness-hint"`
+   1. Hint Container
+      1. This is to change hint details container with all its content
+      1. Default value: Contain 4 hint details with each icons
+      1. This is located on the middle position
+      1. Can be changed by using `slot="hint-container"` property on the child component inside component with `slot="liveness-hint"`
+   1. Specific Hint
+      1. This is to change the content of specific hint details
+      1. Default value: Contain icon and description text
+      1. This is located on the middle position
+      1. Can be changed by using `slot="hint-[number]"` property on the child component inside component with `slot="liveness-hint"`, with `[number]` from 1 - 4.
+      1. Details:
+         1. `slot="hint-1"` for the first hint detail
+         1. `slot="hint-2"` for the second hint detail
+         1. `slot="hint-3"` for the third hint detail
+         1. `slot="hint-4"` for the fourth hint detail
 
 ```html
 <glair-passive-liveness>
-  <div slot="liveness-hint"></div>
+  <glair-liveness-hint slot="liveness-hint">
+    <span slot="heading">Custom Heading</span>
+    <span slot="button-start-text">Custom Button Text</span>
+  </glair-liveness-hint>
 </glair-passive-liveness>
 ```
 
-#### Webcam
+#### Webcam (Unstable)
 
 1. This is the component that display webcam, hint overlay and the used image for verification after verification completed
 1. This is located on upper position
@@ -198,134 +232,134 @@ This section will describe the whole `<glair-passive-liveness>` component
 1. This is located on lower position
 1. To change this view, you need to specify `slot="instruction"` property on the child component inside `<glair-passive-liveness>`
 1. Consist of three children components
-1. Title
-   1. This is the component that display title text
-   1. Default value: `Take photo`
-   1. This is located on the top position
-   1. Can be changed by using `slot="title"` property on the child component inside component with `slot="instruction"`
-1. Screenshot Button
-   1. This is the component that display icon to capture image
-   1. Default value: `Camera Icon Image`
-   1. This is located on the middle position
-   1. Can be changed by using `slot="screenshot"` property on the child component inside component with `slot="instruction"`
-   1. This component will automatically has `onclick` attribute to take screenshot
-1. Additional Description
-   1. This is the component that display additional description text
-   1. Default value: `Make sure your face is clearly visible on the marked area`
-   1. This is located on the bottom position
-   1. Can be changed by using `slot="additional"` property on the child component inside component with `slot="instruction"`
+   1. Title
+      1. This is the component that display title text
+      1. Default value: `Take photo`
+      1. This is located on the top position
+      1. Can be changed by using `slot="title"` property on the child component inside component with `slot="instruction"`
+   1. Screenshot Button
+      1. This is the component that display icon to capture image
+      1. Default value: `Camera Icon Image`
+      1. This is located on the middle position
+      1. Can be changed by using `slot="screenshot"` property on the child component inside component with `slot="instruction"`
+      1. This component will automatically has `onclick` attribute to take screenshot
+   1. Additional Description
+      1. This is the component that display additional description text
+      1. Default value: `Make sure your face is clearly visible on the marked area`
+      1. This is located on the bottom position
+      1. Can be changed by using `slot="additional"` property on the child component inside component with `slot="instruction"`
 
 ```html
 <glair-passive-liveness>
-  <div slot="instruction">
+  <glair-instruction slot="instruction">
     <div slot="title">Custom Title</div>
     <div slot="screenshot"><img /></div>
     <div slot="additional">Custom description</div>
-  </div>
+  </glair-instruction>
 </glair-passive-liveness>
 ```
 
-#### Result
+#### Result (Unstable)
 
 1. This is the component that display result's content
 1. This is located after taking photo and verification process
 1. To change this view, you need to specify `slot="result"` property on the child component inside `<glair-passive-liveness>`
 1. Consist of two children components
-1. Success
-   1. This is the component that display success content
-   1. Can be changed by using `slot="success"` property on the child component inside component with `slot="result"`
-   1. Consist of five children components
-   1. Title
-      1. Display title text
-      1. Default value: `Liveness Verification Successful`
-      1. Located on the top position
-      1. Can be changed by using `slot="title"` property on the child component inside component with `slot="success"`
-   1. Icon
-      1. Display success icon
-      1. Default value: `Success Icon Image`
-      1. Located directly below Title
-      1. Can be changed by using `slot="icon"` property on the child component inside component with `slot="success"`
-   1. Additional Description
-      1. Display success additional description
-      1. Default value: `Successfully verified as a real person`
-      1. Located directly below Icon
-      1. Can be changed by using `slot="additional"` property on the child component inside component with `slot="success"`
-   1. Button
-      1. Display button
-      1. Default value: `CONTINUE`
-      1. Located directly below Additional Description
-      1. Has `type` property to indicate
-      1. Value `override`: override the whole button
-      1. Value `text`: only override the button's text
-      1. Remember to put `onclick` property
-      1. Can be changed by using `slot="button"` property on the child component inside component with `slot="success"`
-   1. Footer
-      1. Display footer
-      1. Default value: `Powered by GLAIR`
-      1. Located on the bottom position
-      1. Can be changed by using `slot="footer"` property on the child component inside component with `slot="success"`
-1. Failure
-   1. This is the component that display failure content
-   1. Can be changed by using `slot="failure"` property on the child component inside component with `slot="result"`
-   1. Consist of five children components
-   1. Title
-      1. Display title text
-      1. Default value: `Liveness Verification Failed`
-      1. Located on the top position
-      1. Can be changed by using `slot="title"` property on the child component inside component with `slot="failure"`
-   1. Icon
-      1. Display failure icon
-      1. Default value: `Failure Icon Image`
-      1. Located directly below Title
-      1. Can be changed by using `slot="icon"` property on the child component inside component with `slot="failure"`
-   1. Additional Description
-      1. Display failure additional description
-      1. Default value: `Cannot identified as a real person`
-      1. Located directly below Icon
-      1. Can be changed by using `slot="additional"` property on the child component inside component with `slot="failure"`
-   1. Retry Button
-      1. Display retry button
-      1. Default value: `TRY AGAIN`
-      1. Located directly below Additional Description
-      1. Has `type` property to indicate
-      1. Value `override`: override the whole button
-      1. Value `text`: only override the button's text
-      1. `onclick` property can't be changed
-      1. Can be changed by using `slot="button-retry"` property on the child component inside component with `slot="failure"`
-   1. Cancel Button
-      1. Display cancel button
-      1. Default value: `CANCEL`
-      1. Located directly below Retry Button
-      1. Has `type` property to indicate
-      1. Value `override`: override the whole button
-      1. Value `text`: only override the button's text
-      1. Remember to put `onclick` property
-      1. Can be changed by using `slot="button-cancel"` property on the child component inside component with `slot="failure"`
-   1. Footer
-      1. Display footer
-      1. Default value: `Powered by GLAIR`
-      1. Located on the bottom position
-      1. Can be changed by using `slot="footer"` property on the child component inside component with `slot="failure"`
+   1. Success
+      1. This is the component that display success content
+      1. Can be changed by using `slot="success"` property on the child component inside component with `slot="result"`
+      1. Consist of five children components
+      1. Title
+         1. Display title text
+         1. Default value: `Liveness Verification Successful`
+         1. Located on the top position
+         1. Can be changed by using `slot="title"` property on the child component inside component with `slot="success"`
+      1. Icon
+         1. Display success icon
+         1. Default value: `Success Icon Image`
+         1. Located directly below Title
+         1. Can be changed by using `slot="icon"` property on the child component inside component with `slot="success"`
+      1. Additional Description
+         1. Display success additional description
+         1. Default value: `Successfully verified as a real person`
+         1. Located directly below Icon
+         1. Can be changed by using `slot="additional"` property on the child component inside component with `slot="success"`
+      1. Button
+         1. Display button
+         1. Default value: `CONTINUE`
+         1. Located directly below Additional Description
+         1. Has `type` property to indicate
+         1. Value `override`: override the whole button
+         1. Value `text`: only override the button's text
+         1. Remember to put `onclick` property
+         1. Can be changed by using `slot="button"` property on the child component inside component with `slot="success"`
+      1. Footer
+         1. Display footer
+         1. Default value: `Powered by GLAIR`
+         1. Located on the bottom position
+         1. Can be changed by using `slot="footer"` property on the child component inside component with `slot="success"`
+   1. Failure
+      1. This is the component that display failure content
+      1. Can be changed by using `slot="failure"` property on the child component inside component with `slot="result"`
+      1. Consist of five children components
+      1. Title
+         1. Display title text
+         1. Default value: `Liveness Verification Failed`
+         1. Located on the top position
+         1. Can be changed by using `slot="title"` property on the child component inside component with `slot="failure"`
+      1. Icon
+         1. Display failure icon
+         1. Default value: `Failure Icon Image`
+         1. Located directly below Title
+         1. Can be changed by using `slot="icon"` property on the child component inside component with `slot="failure"`
+      1. Additional Description
+         1. Display failure additional description
+         1. Default value: `Cannot identified as a real person`
+         1. Located directly below Icon
+         1. Can be changed by using `slot="additional"` property on the child component inside component with `slot="failure"`
+      1. Retry Button
+         1. Display retry button
+         1. Default value: `TRY AGAIN`
+         1. Located directly below Additional Description
+         1. Has `type` property to indicate
+         1. Value `override`: override the whole button
+         1. Value `text`: only override the button's text
+         1. `onclick` property can't be changed
+         1. Can be changed by using `slot="button-retry"` property on the child component inside component with `slot="failure"`
+      1. Cancel Button
+         1. Display cancel button
+         1. Default value: `CANCEL`
+         1. Located directly below Retry Button
+         1. Has `type` property to indicate
+         1. Value `override`: override the whole button
+         1. Value `text`: only override the button's text
+         1. Remember to put `onclick` property
+         1. Can be changed by using `slot="button-cancel"` property on the child component inside component with `slot="failure"`
+      1. Footer
+         1. Display footer
+         1. Default value: `Powered by GLAIR`
+         1. Located on the bottom position
+         1. Can be changed by using `slot="footer"` property on the child component inside component with `slot="failure"`
 
 ```html
 <glair-passive-liveness>
-  <div slot="result">
-    <div slot="success">
+  <glair-result slot="result">
+    <glair-success slot="success">
       <div slot="title">New Title</div>
       <img slot="icon"></div>
       <div slot="additional">Custom Additional</div>
       <button slot="button" type="override" onclick="">Custom Button</button>
       <div slot="footer">Custom Footer</div>
-    </div>
-    <div slot="failure">
+    </glair-success>
+    <glair-failure slot="failure">
       <div slot="title">New Title</div>
       <img slot="icon"></div>
       <div slot="additional">Custom Additional</div>
       <button slot="button-retry" type="text">Custom Retry Button</button>
       <button slot="button-cancel" type="text" onclick="">Custom Cancel Button</button>
       <div slot="footer">Custom Footer</div>
-    </div>
-  </div>
+    </glair-failure>
+  </glair-result>
 </glair-passive-liveness>
 ```
 

@@ -263,7 +263,9 @@ export class PassiveLiveness extends TailwindElement {
 
   render() {
     return html`
-      <!-- <glair-liveness-hint> </glair-liveness-hint> -->
+      <slot name="liveness-hint">
+        <glair-liveness-hint> </glair-liveness-hint>
+      </slot>
       <div class="flex justify-center">
         <div
           class="flex-start align-center flex min-h-[${this.windowSize
