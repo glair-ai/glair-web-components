@@ -13,8 +13,8 @@
 <p>
 
 <p align="center">
-    <a href="https://github.com/glair-ai/glair-web-components/releases"><img src="https://img.shields.io/npm/v/@glair/glair-web-components" alt="Latest Release"></a>
-    <a href="https://github.com/glair-ai/glair-web-components/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@glair/glair-web-components" alt="License"></a>
+    <a href="https://github.com/glair-ai/glair-web-components/releases"><img src="https://img.shields.io/npm/v/@glair/web-components" alt="Latest Release"></a>
+    <a href="https://github.com/glair-ai/glair-web-components/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@glair/web-components" alt="License"></a>
 </p>
 
 # Basic Usage
