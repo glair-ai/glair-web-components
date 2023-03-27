@@ -47,3 +47,8 @@ function getCanvas(props: ScreenshotProps) {
 
   return canvas;
 }
+
+export async function base64ToBlob(base64data: string) {
+  const base64Response = await fetch(base64data);
+  return await base64Response.blob();
+}

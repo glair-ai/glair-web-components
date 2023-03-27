@@ -1,9 +1,14 @@
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ref, createRef } from "lit/directives/ref.js";
 
 import { TailwindElement } from "./tailwind.element";
 import OVERLAY from "../assets/images/passive_overlay.png";
+import { base64ToBlob, getScreenshot } from "../utils";
+import { ON_SCREENSHOT, ON_TRIGGER_SCREENSHOT } from "../constants";
+
+import "./please-wait";
+import "./camera-blocked";
 
 @customElement("glair-webcam")
 export class Webcam extends TailwindElement {
@@ -15,8 +20,6 @@ export class Webcam extends TailwindElement {
   videoEl = createRef();
   @property({ type: Boolean, attribute: "own-stream" })
   ownStream = false;
-  @property({ type: Boolean, state: true })
-  loading = true;
   @property({ type: Boolean })
   mirrored = false;
 
@@ -27,20 +30,38 @@ export class Webcam extends TailwindElement {
   @property({ type: String })
   facingMode = "user";
 
+  @state()
+  isCameraAllowed = false;
+  setIsCameraAllowed(state: boolean) {
+    this.isCameraAllowed = state;
+  }
+  @state()
+  loading = false;
+  setLoading(state: boolean) {
+    this.loading = state;
+  }
+
   async connectedCallback() {
     super.connectedCallback();
 
     await this.requestUserMedia();
-  }
 
-  async updated(changedProps: any) {
-    if (changedProps.has("stream")) {
-      if (this.stream) {
-        setTimeout(() => {
-          this.loading = false;
-        }, 1500);
-      }
-    }
+    // Tambah listener untuk onTriggerScreenshot
+    const pl =
+      document.querySelector("glair-passive-liveness") ??
+      document.createElement("glair-passive-liveness");
+    pl.addEventListener(ON_TRIGGER_SCREENSHOT, async () => {
+      this.setLoading(true);
+      const base64 = getScreenshot({
+        ref: this.videoEl,
+        width: this.width,
+        height: this.height,
+        mirrored: this.mirrored,
+      });
+      // console.log(base64.substring(0));
+      const blob = await base64ToBlob(base64);
+      this.dispatch(ON_SCREENSHOT, blob);
+    });
   }
 
   async requestUserMedia() {
@@ -54,6 +75,7 @@ export class Webcam extends TailwindElement {
         video: true,
       });
       this.handleUserMedia(stream);
+      this.setIsCameraAllowed(true);
     } catch (err) {
       console.log("Error occured", err);
     }
@@ -103,7 +125,6 @@ export class Webcam extends TailwindElement {
   render() {
     return html`
       <div class="relative min-h-[480px] max-w-[480px]">
-        <!-- <div class="h-[300px] w-[300px]"> -->
         <div class="h-[${this.height}px] w-[${this.width}px] overflow-hidden">
           <video
             ${ref(this.videoEl)}
@@ -122,6 +143,12 @@ export class Webcam extends TailwindElement {
             width="${this.width}"
             alt="overlay"
           />
+        </div>
+        <div class="absolute top-[40%] left-[50%] translate-x-[-50%]">
+          ${!this.isCameraAllowed
+            ? html`<glair-camera-blocked></glair-camera-blocked>`
+            : ""}
+          ${this.loading ? html`<glair-please-wait></glair-please-wait>` : ""}
         </div>
       </div>
     `;

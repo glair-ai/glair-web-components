@@ -27,23 +27,33 @@ export class LivenessHint extends TailwindElement {
                       To ease the verification process, please make sure
                     </slot>
                   </h3>
-                  <div class="mt-2 divide-y">
-                    <glair-icon-detail src=${IC_CAMERA}>
-                      Grants camera or photo gallery access permission to your
-                      browser
-                    </glair-icon-detail>
-                    <glair-icon-detail src=${IC_FACE_MASK}>
-                      Do not wear masks, glasses, hats or other accessories that
-                      cover your face
-                    </glair-icon-detail>
-                    <glair-icon-detail src=${IC_BULB}>
-                      Take photo in a place with sufficient lighting, not too
-                      dark or too bright
-                    </glair-icon-detail>
-                    <glair-icon-detail src=${IC_PEOPLE}>
-                      Take photo without anyone else on the screen
-                    </glair-icon-detail>
-                  </div>
+                  <slot name="hint-container">
+                    <div class="mt-2 divide-y">
+                      <slot name="hint-1">
+                        <glair-icon-detail src=${IC_CAMERA}>
+                          Grants camera or photo gallery access permission to
+                          your browser
+                        </glair-icon-detail>
+                      </slot>
+                      <slot name="hint-2">
+                        <glair-icon-detail src=${IC_FACE_MASK}>
+                          Do not wear masks, glasses, hats or other accessories
+                          that cover your face
+                        </glair-icon-detail>
+                      </slot>
+                      <slot name="hint-3">
+                        <glair-icon-detail src=${IC_BULB}>
+                          Take photo in a place with sufficient lighting, not
+                          too dark or too bright
+                        </glair-icon-detail>
+                      </slot>
+                      <slot name="hint-4">
+                        <glair-icon-detail src=${IC_PEOPLE}>
+                          Take photo without anyone else on the screen
+                        </glair-icon-detail>
+                      </slot>
+                    </div>
+                  </slot>
                 </div>
                 <div class="mt-4 flex flex-col items-center">
                   <button

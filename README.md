@@ -128,19 +128,13 @@ pl.addEventListener("onscreenshot", async (event) => {
 
 We also plan to create a more compose-able web components so you can have more control.
 
-# Composable Web Component
+# Web Components API
 
-This is a way for you to customize smaller GLAIR Web Components. You can customize the whole component or just some parts of GLARI Web Components.
+This section contain all details about GLAIR Web Components
 
-## GLAIR Passive Liveness Web Components
+## Composable Web Components
 
-### Description
-
-This component will display GLAIR Passive Liveness. Can be called by using code below inside html
-
-```html
-<glair-passive-liveness></glair-passive-liveness>
-```
+This is a way for you to customize GLAIR Web Components. You can customize the whole component or just some parts of GLAIR Web Components.
 
 ### Partial Customization
 
@@ -158,23 +152,49 @@ E.g: You can change the default title for the instruction by changing only the t
 
 ### Whole Customization
 
-You just need to combine all customization to whole customization.
+You can also change the whole component by replacing the highest `slot` element.
 
-### Passive Liveness Composable Component
+## Passive Liveness Web Component
 
-This section will describe the whole `<glair-passive-liveness>` component
+### Description
 
-`<glair-passive-liveness>` consist of four children components:
+This component will display GLAIR Passive Liveness
+
+Here are some code samples on how to use `<glair-passive-liveness>`
+
+```html
+<glair-passive-liveness></glair-passive-liveness>
+```
+
+### State
+
+`<glair-passive-liveness>` contains one state:
+
+1. **success**: Specify display whether to show `<glair-webcam>` or `<glair-result>` component
+
+### Passive Liveness Composable Components
+
+`<glair-passive-liveness>` consist of four children components that are composable:
 
 1. `<glair-liveness-hint>`
 1. `<glair-webcam>`
 1. `<glair-instruction>`
 1. `<glair-result>`
 
-#### Liveness Hint
+## Liveness Hint
 
-1. This is the component that display liveness hints
-1. This is located as a popup after `<glair-passive-liveness>` first loaded
+### Description
+
+This component will display GLAIR Liveness Hint as popup in the middle of the page
+
+Here are some code samples on how to use `<glair-liveness-hint>`
+
+```html
+<glair-liveness-hint></glair-liveness-hint>
+```
+
+<!-- To Be Updated -->
+
 1. To change this view, you need to specify `slot="liveness-hint"` property on the child component inside `<glair-passive-liveness>`
 1. Consists of two composable children
    1. Heading
@@ -413,3 +433,4 @@ export class GlairPassiveLiveness extends Element {
 ### Future Development
 
 1. Update `<glair-webcam>` to be more robust by using custom event to trigger and pass video stream object
+1. Nambah example v1, v2, v3 di README, termasuk penjelasannya v1 paling rigid karna tinggal pake
