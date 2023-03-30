@@ -5,7 +5,7 @@ import { ref, createRef } from "lit/directives/ref.js";
 import { TailwindElement } from "./tailwind.element";
 import OVERLAY from "../assets/images/passive_overlay.png";
 import { base64ToBlob, getScreenshot } from "../utils";
-import { ON_SCREENSHOT, ON_TRIGGER_SCREENSHOT } from "../constants";
+import { ON_RETRY, ON_SCREENSHOT, ON_TRIGGER_SCREENSHOT } from "../constants";
 
 import "./please-wait";
 import "./camera-blocked";
@@ -46,11 +46,8 @@ export class Webcam extends TailwindElement {
 
     await this.requestUserMedia();
 
-    // Tambah listener untuk onTriggerScreenshot
-    const pl =
-      document.querySelector("glair-passive-liveness") ??
-      document.createElement("glair-passive-liveness");
-    pl.addEventListener(ON_TRIGGER_SCREENSHOT, async () => {
+    // Trigger Screenshot Event Listener to Dispatch Screenshot Blob Image
+    window.addEventListener(ON_TRIGGER_SCREENSHOT, async () => {
       this.setLoading(true);
       const base64 = getScreenshot({
         ref: this.videoEl,
@@ -61,6 +58,11 @@ export class Webcam extends TailwindElement {
       // console.log(base64.substring(0));
       const blob = await base64ToBlob(base64);
       this.dispatch(ON_SCREENSHOT, blob);
+    });
+
+    // Result Event Listener to Change Show State
+    window.addEventListener(ON_RETRY, () => {
+      this.setLoading(false);
     });
   }
 
@@ -101,20 +103,6 @@ export class Webcam extends TailwindElement {
     if (stream) {
       stream.stop();
     }
-  }
-
-  /**
-   * @param {String} eventName
-   * @param {Object} payload
-   */
-  dispatch(eventName: string, payload: object = {}) {
-    this.dispatchEvent(
-      new CustomEvent(eventName, {
-        detail: { payload },
-        composed: true,
-        bubbles: true,
-      })
-    );
   }
 
   disconnectedCallback() {

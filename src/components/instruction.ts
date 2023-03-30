@@ -3,7 +3,9 @@ import { customElement, state } from "lit/decorators.js";
 import { TailwindElement } from "./tailwind.element";
 
 import IC_CAMERA_BTN from "../assets/icon/ic_camera_btn.svg";
-import { ON_TRIGGER_SCREENSHOT } from "../constants";
+import { ON_RETRY, ON_TRIGGER_SCREENSHOT } from "../constants";
+
+import "./loading-dots";
 
 @customElement("glair-instruction")
 export class Instruction extends TailwindElement {
@@ -13,14 +15,18 @@ export class Instruction extends TailwindElement {
     this.loading = load;
   }
 
-  dispatch(eventName: any, payload = {}) {
-    this.dispatchEvent(
-      new CustomEvent(eventName, {
-        detail: { payload },
-        composed: true,
-        bubbles: true,
-      })
-    );
+  connectedCallback() {
+    super.connectedCallback();
+
+    // Trigger Screenshot Event Listener to Change Loading State
+    window.addEventListener(ON_TRIGGER_SCREENSHOT, async () => {
+      this.setLoading(true);
+    });
+
+    // Result Event Listener to Change Show State
+    window.addEventListener(ON_RETRY, () => {
+      this.setLoading(false);
+    });
   }
 
   render() {
@@ -31,10 +37,14 @@ export class Instruction extends TailwindElement {
         ${this.loading
           ? html`
               <glair-loading-dots></glair-loading-dots>
-              <p class="text-white">Verification is in progress</p>
+              <p class="text-white">
+                <slot name="loading-text">Verification is in progress</slot>
+              </p>
             `
           : html`
-              <p class="text-[18px] font-bold text-white">Take photo</p>
+              <p class="text-[18px] font-bold text-white">
+                <slot name="title">Take photo</slot>
+              </p>
               <img
                 class="cursor-pointer"
                 src=${IC_CAMERA_BTN}
@@ -42,11 +52,13 @@ export class Instruction extends TailwindElement {
                 width=${50}
                 alt="ic_camera"
                 @click=${() => {
-                  this.dispatch(ON_TRIGGER_SCREENSHOT, {});
+                  super.dispatch(ON_TRIGGER_SCREENSHOT, {});
                 }}
               />
               <p class="mx-8 text-center text-white">
-                Make sure your face is clearly visible on the marked area
+                <slot name="additional">
+                  Make sure your face is clearly visible on the marked area
+                </slot>
               </p>
             `}
       </div>
