@@ -7,75 +7,25 @@
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./src/index.css" />
     <script type="module" src="/src/components/passive-liveness.ts"></script>
+    <script type="module" src="/src/components/webcam.ts"></script>
   </head>
-  <body>
-    <!-- v1 -->
-    <!-- <glair-passive-liveness> </glair-passive-liveness> -->
-
-    <!-- v2 -->
-    <glair-passive-liveness>
-      <!-- <glair-liveness-hint slot="liveness-hint"> -->
-      <!-- <span slot="heading">J</span> -->
-      <!-- <div slot="hint-container">fsa</div> -->
-      <!-- <div slot="hint-1">Override Hint One</div> -->
-      <!-- <div slot="button-text">Custom Start</div> -->
-      <!-- </glair-liveness-hint> -->
-      <!-- <glair-instruction slot="instruction"> -->
-      <!-- <div slot="loading-text">Custom Loading Text</div> -->
-      <!-- <div slot="title">Custom Title</div> -->
-      <!-- <div slot="additional">Custom Additional</div> -->
-      <!-- </glair-instruction> -->
-      <!-- <glair-result -->
-      <!-- slot="result" -->
-      <!-- show="success" -->
-      <!-- successUrl="https://google.com" -->
-      <!-- cancelUrl="https://youtube.com" -->
-      <!-- > -->
-      <!-- <glair-success-view slot="success"> -->
-      <!-- <div slot="title">Custom Title</div> -->
-      <!-- </glair-success-view> -->
-      <!-- <div slot="footer">Custom Footer</div> -->
-      <!-- </glair-result> -->
-    </glair-passive-liveness>
-
-    <!-- v3 -->
-    <!-- <div> -->
-    <!-- <glair-liveness-hint> -->
-    <!-- <span slot="heading">J</span> -->
-    <!-- </glair-liveness-hint> -->
-    <!-- <glair-webcam></glair-webcam> -->
-    <!-- <glair-instruction></glair-instruction> -->
-    <!-- <glair-result></glair-result> -->
-    <!-- <glair-result show="success"> -->
-    <!-- <glair-success-view slot="success"> -->
-    <!-- <a href="https://google.com" slot="link"> Continue </a> -->
-    <!-- <a href="https://google.com" slot="link" class="btn"> fas </a> -->
-    <!-- </glair-success-view> -->
-    <!-- </glair-result> -->
-    <!-- </div> -->
+  <body style="margin: 0">
+    <div id="webcam-component">
+      <div>
+        <glair-webcam></glair-webcam>
+        <div id="instruction">
+          <p style="font-weight: bold">Take photo</p>
+          <button id="sshot-btn"></button>
+          <p>Make sure your face is clearly visible on the marked area</p>
+        </div>
+      </div>
+    </div>
   </body>
   <script>
-    window.addEventListener("onScreenshot", async (event) => {
-      console.log("window", event.detail);
-
-      // CALL API
-      const sleep = (time) =>
-        new Promise((resolve) => setTimeout(resolve, time));
-      await sleep(100);
-
-      // Post Processing
-      // v1, v2
-      const pl = document.querySelector("glair-passive-liveness");
-      const result = pl.renderRoot.querySelector("glair-result");
-      // result.setAttribute("show", "success");
-      result.setAttribute("show", "failure");
-
-      // v2, v3
-      // const result = document.querySelector("glair-result");
-      // result.setAttribute("show", "success");
-      // result.setAttribute("show", "failure");
-
-      console.log(result);
+    const glairWebcam = document.querySelector("glair-webcam");
+    const btn = document.querySelector("#sshot-btn");
+    btn.addEventListener("click", async () => {
+      const sshot = await glairWebcam.screenshot();
     });
   </script>
 </html>

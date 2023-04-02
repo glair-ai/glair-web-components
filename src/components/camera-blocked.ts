@@ -23,7 +23,7 @@ export class CameraBlocked extends TailwindElement {
                 class="text-md text-[#009CDE]"
                 .onclick=${() => location.reload()}
               >
-                Close
+                Try Again
               </button>
             </div>
           </div>

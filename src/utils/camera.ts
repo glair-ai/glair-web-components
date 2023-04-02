@@ -1,7 +1,5 @@
-import { Ref } from "lit/directives/ref";
-
 interface ScreenshotProps {
-  ref: Ref<Element>;
+  ref: HTMLVideoElement;
   width: number;
   height: number;
   mirrored?: boolean;
@@ -30,13 +28,7 @@ function getCanvas(props: ScreenshotProps) {
       ctx.scale(-1, 1);
     }
 
-    ctx.drawImage(
-      ref.value as HTMLVideoElement,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+    ctx.drawImage(ref, 0, 0, canvas.width, canvas.height);
 
     // invert mirroring
     if (props.mirrored) {

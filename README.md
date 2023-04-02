@@ -98,10 +98,28 @@ useEffect(() => {
 
 | Name                                  | Tag                        | `<script>`                     | ES Module               |
 | ------------------------------------- | -------------------------- | ------------------------------ | ----------------------- |
+| [Webcam](#webcam)                     | `<glair-webcam>`           | `/standalone/glair-webcam`     | `lib/glair-webcam`      |
 | [Passive Liveness](#passive-liveness) | `<glair-passive-liveness>` | `/standalone/passive-liveness` | `/lib/passive-liveness` |
 | [Active Liveness](#active-liveness)   | _in development_           | _in development_               | _in development_        |
 
 ---
+
+## Webcam
+
+This component provides you an easier access for webcam. The aspect ratio will be 1:1. You don't have to manually set the width and height as it will be automatically adjusted using this algorithm: `Math.min(window.innerHeight, window.innerWidth, 480)`. Under the hood, the component listens to `resize` event.
+
+### Attributes
+
+| Name         | Type                                              | Default Value | Notes                                                                                                                                                  |
+| ------------ | ------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `facingMode` | Corresponds to `MediaTrackConstraints.facingMode` | `user`        | Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
+| `mirrored`   | Set to true to mirror the image                   | `false`       | `lib/glair-webcam`                                                                                                                                     |
+
+### Methods
+
+| Method signature | Return Value    | Description                                  |
+| ---------------- | --------------- | -------------------------------------------- |
+| `screenshot()`   | `Promise<Blob>` | Screenshot the current image shown on webcam |
 
 ## Passive Liveness
 
