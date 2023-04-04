@@ -7,12 +7,17 @@ import { base64ToBlob, getScreenshot } from "../utils";
 
 import "./please-wait";
 import "./camera-blocked";
-import { ResizeController } from "../controllers/resize-controller";
 
 @customElement("glair-webcam")
 export class Webcam extends TailwindElement {
   @query("video")
   videoEl!: HTMLVideoElement;
+
+  @property({ type: Number })
+  width = 480;
+
+  @property({ type: Number })
+  height = 480;
 
   @property({ type: String })
   facingMode = "user";
@@ -22,8 +27,6 @@ export class Webcam extends TailwindElement {
 
   @state()
   _isCameraAllowed = false;
-
-  private resizeController = new ResizeController(this);
 
   async connectedCallback() {
     super.connectedCallback();
@@ -45,8 +48,8 @@ export class Webcam extends TailwindElement {
   async screenshot() {
     const base64 = getScreenshot({
       ref: this.videoEl,
-      width: this.resizeController.frameSize,
-      height: this.resizeController.frameSize,
+      width: this.width,
+      height: this.height,
       mirrored: this.mirrored,
     });
     console.log({ base64 });
@@ -56,18 +59,13 @@ export class Webcam extends TailwindElement {
   // https://stackoverflow.com/questions/4000818/scale-html5-video-and-break-aspect-ratio-to-fill-whole-site
   render() {
     return html`
-      <div
-        class="relative bg-gray-200"
-        style="width: ${this.resizeController.frameSize}px; height: ${this
-          .resizeController.frameSize}px"
-      >
+      <div class="relative bg-gray-200">
         <video
           autoplay
           muted
           playsinline
           class="object-cover"
-          style="width: ${this.resizeController.frameSize}px; height: ${this
-            .resizeController.frameSize}px"
+          style="width: ${this.width}px; height: ${this.height}px;"
         ></video>
         ${this.overlayTemplate()}
         <div

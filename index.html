@@ -9,15 +9,31 @@
     <script type="module" src="/src/components/passive-liveness.ts"></script>
     <script type="module" src="/src/components/webcam.ts"></script>
   </head>
-  <body style="margin: 0">
+  <body>
     <div id="webcam-component">
-      <div>
-        <glair-webcam></glair-webcam>
-        <div id="instruction">
-          <p style="font-weight: bold">Take photo</p>
-          <button id="sshot-btn"></button>
-          <p>Make sure your face is clearly visible on the marked area</p>
+      <glair-webcam width="300" height="300"></glair-webcam>
+      <div id="instruction" slot="instruction">
+        <p style="font-weight: bold">Take photo</p>
+        <button id="sshot-btn"></button>
+        <p>Make sure your face is clearly visible on the marked area</p>
+      </div>
+    </div>
+    <div id="hint">
+      <div id="hint-wrapper">
+        <strong>To ease the verification process, please make sure:</strong>
+        <div>
+          1. Grants camera or photo gallery access permission to your browser
         </div>
+        <div>
+          2. Do not wear masks, glasses, hats or other accessories that cover
+          your face
+        </div>
+        <div>
+          3. Take photo in a place with sufficient lighting, not too dark or too
+          bright
+        </div>
+        <div>4. Take photo without anyone else on the screen</div>
+        <button class="start-btn"><strong>START</strong></button>
       </div>
     </div>
   </body>
@@ -26,6 +42,11 @@
     const btn = document.querySelector("#sshot-btn");
     btn.addEventListener("click", async () => {
       const sshot = await glairWebcam.screenshot();
+    });
+
+    const startBtn = document.querySelector(".start-btn");
+    startBtn.addEventListener("click", () => {
+      startBtn.parentElement.parentElement.remove();
     });
   </script>
 </html>

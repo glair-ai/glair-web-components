@@ -1,7 +1,10 @@
-#webcam-component {
-  display: flex;
+body {
   font-family: sans-serif;
-  justify-content: center;
+}
+
+#webcam-component {
+  width: 300px;
+  margin: 0 auto;
 }
 
 #instruction {
@@ -21,4 +24,36 @@
   width: 50px;
   height: 50px;
   background: red;
+}
+
+#hint {
+  position: fixed;
+  top: 1rem;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  padding: 0 2rem;
+  overflow-y: auto;
+}
+
+#hint-wrapper {
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  margin: 0 auto;
+  max-width: 32rem;
+  gap: 1rem;
+}
+
+.start-btn {
+  padding: 0.5rem 3rem;
+  border-radius: 0.5rem;
+  border: 2px solid black;
+  align-self: center;
+  cursor: pointer;
+  background: white;
+  font-size: 1rem;
 }
