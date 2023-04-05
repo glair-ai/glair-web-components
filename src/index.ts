@@ -1,4 +1,3 @@
-export { CameraBlocked } from "./components/camera-blocked";
 export { Failure } from "./components/failure";
 export { LivenessHint } from "./components/liveness-hint";
 export { LoadingDots } from "./components/loading-dots";

@@ -1,12 +1,9 @@
 import { html } from "lit";
 import { customElement, property, state, query } from "lit/decorators.js";
+import CORNER_OVERLAY from "../assets/images/corner_overlay.png";
 
 import { TailwindElement } from "./tailwind.element";
-import CORNER_OVERLAY from "../assets/images/corner_overlay.png";
-import { base64ToBlob, getScreenshot } from "../utils";
-
-import "./please-wait";
-import "./camera-blocked";
+import { getScreenshot } from "../utils";
 
 @customElement("glair-webcam")
 export class Webcam extends TailwindElement {
@@ -26,7 +23,7 @@ export class Webcam extends TailwindElement {
   mirrored = false;
 
   @state()
-  _isCameraAllowed = false;
+  _isUserMedia = false;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -39,21 +36,19 @@ export class Webcam extends TailwindElement {
         video: { facingMode: this.facingMode },
       });
       this.videoEl.srcObject = stream;
-      this._isCameraAllowed = true;
+      this._isUserMedia = true;
     } catch (err) {
       console.error("Error occured", err);
     }
   }
 
   async screenshot() {
-    const base64 = getScreenshot({
+    return getScreenshot({
       ref: this.videoEl,
       width: this.width,
       height: this.height,
       mirrored: this.mirrored,
     });
-    console.log({ base64 });
-    return await base64ToBlob(base64);
   }
 
   // https://stackoverflow.com/questions/4000818/scale-html5-video-and-break-aspect-ratio-to-fill-whole-site
@@ -65,47 +60,70 @@ export class Webcam extends TailwindElement {
           muted
           playsinline
           class="object-cover"
-          style="width: ${this.width}px; height: ${this.height}px;"
+          style="width: ${this.width}px; height: ${this
+            .height}px; transform: scaleX(${this.mirrored ? "-1" : "1"});"
         ></video>
-        ${this.overlayTemplate()}
-        <div
-          class="absolute top-[50%] left-[50%] translate-y-[-50%] translate-x-[-50%]"
-        >
-          ${!this._isCameraAllowed
-            ? html`<glair-camera-blocked></glair-camera-blocked>`
-            : ""}
-        </div>
+        ${this.userMediaError()} ${this.userMedia()}
       </div>
     `;
   }
 
-  overlayTemplate() {
-    const width = "50px";
+  userMediaError() {
     return html`
-      <img
-        src=${CORNER_OVERLAY}
-        alt="overlay"
-        width=${width}
-        class="absolute top-12 left-12 md:top-16 md:left-16"
-      />
-      <img
-        src=${CORNER_OVERLAY}
-        alt="overlay"
-        width=${width}
-        class="absolute bottom-12 left-12 -rotate-90 md:bottom-16 md:left-16"
-      />
-      <img
-        src=${CORNER_OVERLAY}
-        alt="overlay"
-        width=${width}
-        class="absolute top-12 right-12 rotate-90 md:top-16 md:right-16"
-      />
-      <img
-        src=${CORNER_OVERLAY}
-        alt="overlay"
-        width=${width}
-        class="absolute bottom-12 right-12 rotate-180 md:right-16 lg:bottom-16"
-      />
+      <div style="${!this._isUserMedia ? "display: revert" : "display: none"}">
+        <slot name="user-media-error">
+          <div
+            class="absolute top-[50%] left-[50%] flex w-[300px] translate-y-[-50%] translate-x-[-50%] flex-col rounded-sm border bg-white py-4 px-8"
+          >
+            <p class="text-[20px]">Camera blocked</p>
+            <p class="my-4">
+              Please allow camera access in your browser settings and try again.
+            </p>
+            <div class="flex flex-col items-end">
+              <button
+                type="button"
+                class="text-md text-[#009CDE]"
+                .onclick=${() => location.reload()}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </slot>
+      </div>
+    `;
+  }
+
+  userMedia() {
+    return html`
+      <div style="${this._isUserMedia ? "display: revert" : "display: none"}">
+        <slot name="user-media">
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute top-12 left-12 md:top-16 md:left-16"
+          />
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute bottom-12 left-12 -rotate-90 md:bottom-16 md:left-16"
+          />
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute top-12 right-12 rotate-90 md:top-16 md:right-16"
+          />
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute bottom-12 right-12 rotate-180 md:right-16 lg:bottom-16"
+          />
+        </slot>
+      </div>
     `;
   }
 }

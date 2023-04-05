@@ -10,8 +10,8 @@
     <script type="module" src="/src/components/webcam.ts"></script>
   </head>
   <body>
-    <div id="webcam-component">
-      <glair-webcam width="300" height="300"></glair-webcam>
+    <div id="webcam-wrapper">
+      <glair-webcam width="300" height="300" mirrored="true"></glair-webcam>
       <div id="instruction" slot="instruction">
         <p style="font-weight: bold">Take photo</p>
         <button id="sshot-btn"></button>
@@ -21,30 +21,36 @@
     <div id="hint">
       <div id="hint-wrapper">
         <strong>To ease the verification process, please make sure:</strong>
-        <div>
+        <div class="hint-elmt">
           1. Grants camera or photo gallery access permission to your browser
         </div>
-        <div>
+        <div class="hint-elmt">
           2. Do not wear masks, glasses, hats or other accessories that cover
           your face
         </div>
-        <div>
+        <div class="hint-elmt">
           3. Take photo in a place with sufficient lighting, not too dark or too
           bright
         </div>
-        <div>4. Take photo without anyone else on the screen</div>
-        <button class="start-btn"><strong>START</strong></button>
+        <div class="hint-elmt">
+          4. Take photo without anyone else on the screen
+        </div>
+        <button id="start-btn"><strong>START</strong></button>
       </div>
     </div>
   </body>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
     const btn = document.querySelector("#sshot-btn");
+    const startBtn = document.querySelector("#start-btn");
+
     btn.addEventListener("click", async () => {
       const sshot = await glairWebcam.screenshot();
+      const fetchSshot = await fetch(sshot);
+      const blob = await fetchSshot.blob();
+      console.log(sshot, blob);
     });
 
-    const startBtn = document.querySelector(".start-btn");
     startBtn.addEventListener("click", () => {
       startBtn.parentElement.parentElement.remove();
     });
