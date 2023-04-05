@@ -31,7 +31,7 @@ Add the following `<script>` tag after `<body>`. Replace the `{web-component-nam
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/glair-web-components/standalone/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components/standalone/{web-component-name}.js"
 ></script>
 ```
 
@@ -140,14 +140,14 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 | Name         | Type    | Default Value | Notes                                                                                                                                                                                                     |
 | ------------ | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `width`      | number  | `480`         | The width of the webcam                                                                                                                                                                                   |
-| `height`     | number  | `480`         | The height of the webcam                                                                                                                                                                                  |
+| `width`      | number  | `480`         | The width of the webcam.                                                                                                                                                                                  |
+| `height`     | number  | `480`         | The height of the webcam.                                                                                                                                                                                 |
 | `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
-| `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally                                                                                                                                                            |
+| `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
 
 ### Slots
 
-Slots here mean the [Web Component Slot element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). This allows you to plug-in your own custom elements to the slot.
+Slots here mean the [Web Component Slot element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). This allows you to plug-in your own custom elements to the slot and override the default behavior.
 
 | Slot Name          | Note Case                                                                              |
 | ------------------ | -------------------------------------------------------------------------------------- |
@@ -156,15 +156,15 @@ Slots here mean the [Web Component Slot element](https://developer.mozilla.org/e
 
 ### Methods
 
-| Method signature | Return Value      | Description                                  |
-| ---------------- | ----------------- | -------------------------------------------- |
-| `screenshot()`   | `Promise<string>` | Screenshot the current image shown on webcam |
+| Method signature | Return Value      | Description                                                                      |
+| ---------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `screenshot()`   | `Promise<string>` | Returns a promise of base64 encoded string of the current image shown on webcam. |
 
 ### Sample Usages
 
 Sample usage for `glair-webcam` has been provided at [Basic Usage](#basic-usage) section.
 
-Sample usage with custom element for slot `camera-blocked`:
+Sample usage with custom element for slot `user-media-error`:
 
 ```html
 <glair-webcam>
@@ -176,3 +176,7 @@ Sample usage with custom element for slot `camera-blocked`:
   </div>
 </glair-webcam>
 ```
+
+### Use Cases
+
+`glair-webcam` will help you to create OCR or face biometrics apps. You can use it to take a photo of the user's face and send it to [GLAIR Vision's API](https://docs.glair.ai) for liveness detection. You can also use it to take photo of documents (e.g. KTP, Passport) and send it to [GLAIR Vision's API](https://docs.glair.ai).
