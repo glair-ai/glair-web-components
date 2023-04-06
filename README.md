@@ -127,9 +127,9 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ## List of GLAIR Web Components
 
-| No  | Name              | Tag              | `<script>`           | ES Module    | Demo                                                                                                                                                                                |
-| --- | ----------------- | ---------------- | -------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `lib/webcam` | [![Edit dazzling-tristan-wkxhpc](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
+| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                |
+| --- | ----------------- | ---------------- | -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit dazzling-tristan-wkxhpc](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
 
 ---
 
