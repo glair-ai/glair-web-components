@@ -102,25 +102,25 @@ export class Webcam extends TailwindElement {
             src=${CORNER_OVERLAY}
             alt="overlay"
             width="50"
-            class="absolute top-12 left-12 md:top-16 md:left-16"
+            class="absolute top-12 left-12"
           />
           <img
             src=${CORNER_OVERLAY}
             alt="overlay"
             width="50"
-            class="absolute bottom-12 left-12 -rotate-90 md:bottom-16 md:left-16"
+            class="absolute bottom-12 left-12 -rotate-90"
           />
           <img
             src=${CORNER_OVERLAY}
             alt="overlay"
             width="50"
-            class="absolute top-12 right-12 rotate-90 md:top-16 md:right-16"
+            class="absolute top-12 right-12 rotate-90"
           />
           <img
             src=${CORNER_OVERLAY}
             alt="overlay"
             width="50"
-            class="absolute bottom-12 right-12 rotate-180 md:right-16 lg:bottom-16"
+            class="absolute bottom-12 right-12 rotate-180"
           />
         </slot>
       </div>

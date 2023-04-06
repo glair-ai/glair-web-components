@@ -89,7 +89,7 @@ Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo 
 
   <script
     type="module"
-    src="https://unpkg.com/@glair/web-components@0.0.1-beta.2/standalone/webcam.js"
+    src="https://unpkg.com/@glair/web-components/standalone/webcam.js"
   ></script>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
