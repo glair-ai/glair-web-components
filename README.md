@@ -44,7 +44,7 @@ Specify version number if you want to use a specific version. For example:
 ></script>
 ```
 
-Fully working sample (using [glair-webcam](#webcam) component):
+Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo link](https://codesandbox.io/embed/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark)):
 
 ```html
 <!DOCTYPE html>
@@ -127,9 +127,9 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ## List of GLAIR Web Components
 
-| No  | Name              | Tag              | `<script>`           | ES Module    |
-| --- | ----------------- | ---------------- | -------------------- | ------------ |
-| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `lib/webcam` |
+| No  | Name              | Tag              | `<script>`           | ES Module    | Demo                                                                                                                                                                                |
+| --- | ----------------- | ---------------- | -------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `lib/webcam` | [![Edit dazzling-tristan-wkxhpc](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
 
 ---
 
