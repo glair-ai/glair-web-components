@@ -6,76 +6,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./src/index.css" />
-    <script type="module" src="/src/components/passive-liveness.ts"></script>
+    <script type="module" src="/src/components/webcam.ts"></script>
   </head>
   <body>
-    <!-- v1 -->
-    <!-- <glair-passive-liveness> </glair-passive-liveness> -->
-
-    <!-- v2 -->
-    <glair-passive-liveness>
-      <!-- <glair-liveness-hint slot="liveness-hint"> -->
-      <!-- <span slot="heading">J</span> -->
-      <!-- <div slot="hint-container">fsa</div> -->
-      <!-- <div slot="hint-1">Override Hint One</div> -->
-      <!-- <div slot="button-text">Custom Start</div> -->
-      <!-- </glair-liveness-hint> -->
-      <!-- <glair-instruction slot="instruction"> -->
-      <!-- <div slot="loading-text">Custom Loading Text</div> -->
-      <!-- <div slot="title">Custom Title</div> -->
-      <!-- <div slot="additional">Custom Additional</div> -->
-      <!-- </glair-instruction> -->
-      <!-- <glair-result -->
-      <!-- slot="result" -->
-      <!-- show="success" -->
-      <!-- successUrl="https://google.com" -->
-      <!-- cancelUrl="https://youtube.com" -->
-      <!-- > -->
-      <!-- <glair-success-view slot="success"> -->
-      <!-- <div slot="title">Custom Title</div> -->
-      <!-- </glair-success-view> -->
-      <!-- <div slot="footer">Custom Footer</div> -->
-      <!-- </glair-result> -->
-    </glair-passive-liveness>
-
-    <!-- v3 -->
-    <!-- <div> -->
-    <!-- <glair-liveness-hint> -->
-    <!-- <span slot="heading">J</span> -->
-    <!-- </glair-liveness-hint> -->
-    <!-- <glair-webcam></glair-webcam> -->
-    <!-- <glair-instruction></glair-instruction> -->
-    <!-- <glair-result></glair-result> -->
-    <!-- <glair-result show="success"> -->
-    <!-- <glair-success-view slot="success"> -->
-    <!-- <a href="https://google.com" slot="link"> Continue </a> -->
-    <!-- <a href="https://google.com" slot="link" class="btn"> fas </a> -->
-    <!-- </glair-success-view> -->
-    <!-- </glair-result> -->
-    <!-- </div> -->
+    <div id="webcam-wrapper">
+      <glair-webcam width="300" height="300" mirrored></glair-webcam>
+      <div id="instruction">
+        <p style="font-weight: bold">Take photo</p>
+        <button id="sshot-btn"></button>
+        <p>Make sure your face is clearly visible on the marked area</p>
+      </div>
+    </div>
+    <div id="hint">
+      <div id="hint-wrapper">
+        <strong>To ease the verification process, please make sure:</strong>
+        <div class="hint-elmt">
+          1. Grants camera or photo gallery access permission to your browser
+        </div>
+        <div class="hint-elmt">
+          2. Do not wear masks, glasses, hats or other accessories that cover
+          your face
+        </div>
+        <div class="hint-elmt">
+          3. Take photo in a place with sufficient lighting, not too dark or too
+          bright
+        </div>
+        <div class="hint-elmt">
+          4. Take photo without anyone else on the screen
+        </div>
+        <button id="start-btn"><strong>START</strong></button>
+      </div>
+    </div>
   </body>
   <script>
-    window.addEventListener("onScreenshot", async (event) => {
-      console.log("window", event.detail);
+    const glairWebcam = document.querySelector("glair-webcam");
+    const btn = document.querySelector("#sshot-btn");
+    const startBtn = document.querySelector("#start-btn");
 
-      // CALL API
-      const sleep = (time) =>
-        new Promise((resolve) => setTimeout(resolve, time));
-      await sleep(100);
+    btn.addEventListener("click", async () => {
+      const sshot = await glairWebcam.screenshot();
+      const fetchSshot = await fetch(sshot);
+      const blob = await fetchSshot.blob();
+      console.log(sshot, blob);
+    });
 
-      // Post Processing
-      // v1, v2
-      const pl = document.querySelector("glair-passive-liveness");
-      const result = pl.renderRoot.querySelector("glair-result");
-      // result.setAttribute("show", "success");
-      result.setAttribute("show", "failure");
-
-      // v2, v3
-      // const result = document.querySelector("glair-result");
-      // result.setAttribute("show", "success");
-      // result.setAttribute("show", "failure");
-
-      console.log(result);
+    startBtn.addEventListener("click", () => {
+      startBtn.parentElement.parentElement.remove();
     });
   </script>
 </html>
