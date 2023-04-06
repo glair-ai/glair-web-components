@@ -40,7 +40,7 @@ Specify version number if you want to use a specific version. For example:
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/web-components@0.0.1-beta.1/standalone/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components@0.0.1-beta.2/standalone/{web-component-name}.js"
 ></script>
 ```
 
@@ -89,7 +89,7 @@ Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo 
 
   <script
     type="module"
-    src="https://unpkg.com/@glair/web-components/standalone/webcam.js"
+    src="https://unpkg.com/@glair/web-components@0.0.1-beta.2/standalone/webcam.js"
   ></script>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
