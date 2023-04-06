@@ -6,13 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./src/index.css" />
-    <script type="module" src="/src/components/passive-liveness.ts"></script>
     <script type="module" src="/src/components/webcam.ts"></script>
   </head>
   <body>
     <div id="webcam-wrapper">
-      <glair-webcam width="300" height="300" mirrored="true"></glair-webcam>
-      <div id="instruction" slot="instruction">
+      <glair-webcam width="300" height="300" mirrored></glair-webcam>
+      <div id="instruction">
         <p style="font-weight: bold">Take photo</p>
         <button id="sshot-btn"></button>
         <p>Make sure your face is clearly visible on the marked area</p>

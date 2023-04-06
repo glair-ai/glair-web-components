@@ -40,13 +40,14 @@ Specify version number if you want to use a specific version. For example:
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/web-components@0.0.1-beta.1/lib/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components@0.0.1-beta.1/standalone/{web-component-name}.js"
 ></script>
 ```
 
 Fully working sample (using [glair-webcam](#webcam) component):
 
 ```html
+<!DOCTYPE html>
 <html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GLAIR's Web Components</title>
@@ -78,7 +79,7 @@ Fully working sample (using [glair-webcam](#webcam) component):
   <body>
     <div id="webcam-wrapper">
       <glair-webcam></glair-webcam>
-      <div id="instruction" slot="instruction">
+      <div id="instruction">
         <p style="font-weight: bold">Take photo</p>
         <button id="sshot-btn"></button>
         <p>Make sure your face is clearly visible on the marked area</p>
@@ -88,7 +89,7 @@ Fully working sample (using [glair-webcam](#webcam) component):
 
   <script
     type="module"
-    src="https://unpkg.com/@glair/web-components/lib/webcam.js"
+    src="https://unpkg.com/@glair/web-components/standalone/webcam.js"
   ></script>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
@@ -118,7 +119,7 @@ npm install @glair/web-components
 Then on the code:
 
 ```js
-import from "@glair/web-components/lib/{web-component-name}";
+import "@glair/web-components/lib/{web-component-name}";
 // Now you can render <glair-webcam></glair-webcam>
 ```
 
@@ -169,7 +170,7 @@ Sample usage with custom element for slot `user-media-error`:
 ```html
 <glair-webcam>
   <div
-    slot="camera-blocked"
+    slot="user-media-error"
     style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"
   >
     Camera permission denied
@@ -179,4 +180,4 @@ Sample usage with custom element for slot `user-media-error`:
 
 ### Use Cases
 
-`glair-webcam` will help you to create OCR or face biometrics apps. You can use it to take a photo of the user's face and send it to [GLAIR Vision's API](https://docs.glair.ai) for liveness detection. You can also use it to take photo of documents (e.g. KTP, Passport) and send it to [GLAIR Vision's API](https://docs.glair.ai).
+`glair-webcam` will help you to create OCR or face biometrics apps. You can use it to take a photo of the user's face and send it to [GLAIR Vision's API](https://docs.glair.ai) for liveness detection. You can also use it to take a photo of documents (e.g. KTP, Passport) and send it to [GLAIR Vision's API](https://docs.glair.ai).
