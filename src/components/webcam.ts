@@ -1,144 +1,128 @@
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
-import { ref, createRef } from "lit/directives/ref.js";
+import { customElement, property, state, query } from "lit/decorators.js";
+import CORNER_OVERLAY from "../assets/images/corner_overlay.png";
 
 import { TailwindElement } from "./tailwind.element";
+import { getScreenshot } from "../utils";
 
 @customElement("glair-webcam")
 export class Webcam extends TailwindElement {
-  @property({ type: Boolean, reflect: true })
-  hasMedia = false;
-  @property({ type: Object })
-  stream: object | null = null;
-  @property({ type: Object, state: true })
-  videoEl = createRef();
-  @property({ type: Boolean, attribute: "own-stream" })
-  ownStream = false;
-  @property({ type: Boolean, state: true })
-  loading = true;
+  @query("video")
+  videoEl!: HTMLVideoElement;
 
-  @property({ type: Number, attribute: "width" })
+  @property({ type: Number })
   width = 480;
-  @property({ type: Number, attribute: "height" })
+
+  @property({ type: Number })
   height = 480;
+
   @property({ type: String })
   facingMode = "user";
 
+  @property({ type: Boolean })
+  mirrored = false;
+
+  @state()
+  _isUserMedia = false;
+
   async connectedCallback() {
     super.connectedCallback();
-    if (!hasGetUserMedia()) {
-      this.dispatch("onUserMediaError", {
-        error: errorConstants.NOT_SUPPORTED,
-      });
-      return;
-    }
-
-    if (!this.hasMedia) {
-      await this.requestUserMedia();
-    }
-  }
-
-  async updated(changedProps: any) {
-    // super.updated(_changedProperties);
-    if (
-      changedProps.has("videoContrainst") ||
-      changedProps.has("audioConstraints") ||
-      changedProps.has("audio")
-    ) {
-      await this.requestUserMedia();
-    }
-
-    if (changedProps.has("stream")) {
-      if (this.stream) {
-        setTimeout(() => {
-          this.loading = false;
-        }, 1500);
-      }
-    }
+    await this.requestUserMedia();
   }
 
   async requestUserMedia() {
-    if (this.ownStream) {
-      if (this.stream !== null) this.handleUserMedia(this.stream);
-      return;
-    }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: this.width,
-          height: this.height,
-          facingMode: this.facingMode,
-        },
+        video: { facingMode: this.facingMode },
       });
-      this.handleUserMedia(stream);
+      this.videoEl.srcObject = stream;
+      this._isUserMedia = true;
     } catch (err) {
-      console.log("Error occured", err);
+      console.error("Error occured", err);
     }
   }
 
-  /** @param {MediaStream} stream */
-  handleUserMedia(stream: object) {
-    this.stream = stream;
-
-    try {
-      if (this.videoEl?.value) {
-        const videoEl = this.videoEl.value as HTMLVideoElement;
-        videoEl.srcObject = stream as MediaProvider;
-      }
-      this.hasMedia = true;
-    } catch (error) {
-      console.log("Error occured on webcam", error);
-    }
-    this.dispatch("onUserMedia", stream);
+  async screenshot() {
+    return getScreenshot({
+      ref: this.videoEl,
+      width: this.width,
+      height: this.height,
+      mirrored: this.mirrored,
+    });
   }
 
-  /** @param {MediaStream} stream */
-  static stopMediaStream(stream: any) {
-    if (stream) {
-      if (stream.getVideoTracks && stream.getAudioTracks) {
-        stream
-          .getVideoTracks()
-          .map((track: { stop: () => any }) => track.stop());
-        stream
-          .getAudioTracks()
-          .map((track: { stop: () => any }) => track.stop());
-      } else {
-        stream.stop();
-      }
-    }
-  }
-
-  /**
-   * @param {String} eventName
-   * @param {Object} payload
-   */
-  dispatch(eventName: string, payload: object = {}) {
-    this.dispatchEvent(
-      new CustomEvent(eventName, {
-        detail: { payload },
-        composed: true,
-        bubbles: true,
-      })
-    );
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    Webcam.stopMediaStream(this.stream);
-  }
-
+  // https://stackoverflow.com/questions/4000818/scale-html5-video-and-break-aspect-ratio-to-fill-whole-site
   render() {
     return html`
-      <div
-        class="${classMap({
-          wrapper: true,
-          loading: this.loading,
-        })}"
-        style="${`width: ${this.width}px; height: ${this.height}px`}"
-      >
-        <video ${ref(this.videoEl)} autoplay muted playsinline></video>
+      <div class="relative bg-gray-200">
+        <video
+          autoplay
+          muted
+          playsinline
+          class="object-cover"
+          style="width: ${this.width}px; height: ${this
+            .height}px; transform: scaleX(${this.mirrored ? "-1" : "1"});"
+        ></video>
+        ${this.userMediaError()} ${this.userMedia()}
+      </div>
+    `;
+  }
+
+  userMediaError() {
+    return html`
+      <div style="${!this._isUserMedia ? "display: revert" : "display: none"}">
+        <slot name="user-media-error">
+          <div
+            class="absolute top-[50%] left-[50%] flex w-[300px] translate-y-[-50%] translate-x-[-50%] flex-col rounded-sm border bg-white py-4 px-8"
+          >
+            <p class="text-[20px]">Camera blocked</p>
+            <p class="my-4">
+              Please allow camera access in your browser settings and try again.
+            </p>
+            <div class="flex flex-col items-end">
+              <button
+                type="button"
+                class="text-md text-[#009CDE]"
+                .onclick=${() => location.reload()}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </slot>
+      </div>
+    `;
+  }
+
+  userMedia() {
+    return html`
+      <div style="${this._isUserMedia ? "display: revert" : "display: none"}">
+        <slot name="user-media">
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute top-12 left-12 md:top-16 md:left-16"
+          />
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute bottom-12 left-12 -rotate-90 md:bottom-16 md:left-16"
+          />
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute top-12 right-12 rotate-90 md:top-16 md:right-16"
+          />
+          <img
+            src=${CORNER_OVERLAY}
+            alt="overlay"
+            width="50"
+            class="absolute bottom-12 right-12 rotate-180 md:right-16 lg:bottom-16"
+          />
+        </slot>
       </div>
     `;
   }
@@ -148,16 +132,4 @@ declare global {
   interface HTMLElementTagNameMap {
     "glair-webcam": Webcam;
   }
-}
-
-const errorConstants = {
-  NOT_SUPPORTED: "NOT_SUPPORTED",
-  PERMISSION_DENIED: "PERMISSION_DENIED",
-  NOT_READABLE: "NOT_READABLE",
-  NOT_FOUND: "NOT_FOUND",
-  DEFAULT_ERROR: "DEFAULT_ERROR",
-};
-
-function hasGetUserMedia() {
-  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 }

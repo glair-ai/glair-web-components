@@ -31,39 +31,78 @@ Add the following `<script>` tag after `<body>`. Replace the `{web-component-nam
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/glair-web-components/standalone/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components/standalone/{web-component-name}.js"
 ></script>
 ```
 
-Fully working sample (passive liveness component):
+Specify version number if you want to use a specific version. For example:
+
+```html
+<script
+  type="module"
+  src="https://unpkg.com/@glair/web-components@0.0.1-beta.1/standalone/{web-component-name}.js"
+></script>
+```
+
+Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo link](https://codesandbox.io/embed/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark)):
 
 ```html
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GLAIR's Web Components</title>
+<html>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GLAIR's Web Components</title>
+  <style>
+    #webcam-wrapper {
+      width: 480px;
+      margin: 0 auto;
+    }
 
-    <!-- You can override the component's styling using CSS  -->
-    <style>
-      glair-passive-liveness {
-        font-family: ui-sans-serif, system-ui;
-      }
-    </style>
-  </head>
+    #instruction {
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 2rem;
+      text-align: center;
+    }
+
+    #sshot-btn {
+      cursor: pointer;
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      background: red;
+    }
+  </style>
   <body>
-    <glair-passive-liveness></glair-passive-liveness>
+    <div id="webcam-wrapper">
+      <glair-webcam></glair-webcam>
+      <div id="instruction">
+        <p style="font-weight: bold">Take photo</p>
+        <button id="sshot-btn"></button>
+        <p>Make sure your face is clearly visible on the marked area</p>
+      </div>
+    </div>
   </body>
+
   <script
     type="module"
-    src="https://unpkg.com/@glair/glair-web-components/standalone/passive-liveness.js"
+    src="https://unpkg.com/@glair/web-components/standalone/webcam.js"
   ></script>
   <script>
-    const pl = document.querySelector("glair-passive-liveness");
-    pl.addEventListener("onscreenshot", async (event) => {
-      console.log(event.detail.payload);
+    const glairWebcam = document.querySelector("glair-webcam");
+    const btn = document.querySelector("#sshot-btn");
+
+    btn.addEventListener("click", async () => {
+      const base64sshot = await glairWebcam.screenshot();
+      const fetchSshot = await fetch(base64sshot);
+      const blob = await fetchSshot.blob();
+      console.log(base64sshot, blob);
+
+      // Send the blob to your backend server
+      // Then, your backend server can send it to GLAIR Vision's API
     });
   </script>
 </html>
@@ -71,59 +110,74 @@ Fully working sample (passive liveness component):
 
 ## Via ES Module
 
-Install the `@glair/glair-web-components` from NPM:
+Install the `@glair/web-components` from NPM:
 
 ```sh
-npm install @glair/glair-web-components
+npm install @glair/web-components
 ```
 
-You can import web components individually. The sample assumes you're using React, but you can extrapolate it for other frameworks.
+Then on the code:
 
 ```js
-// If the web component does not access window object on mount, use this
-import from "@glair/glair-web-components/lib/{web-component-name}";
-
-// If the web component accesses window object on mount (e.g. passive-liveness), we need to import it in useEffect
-useEffect(() => {
-  const execute = async () => {
-    await import("@glair/gair-web-components/lib/passive-liveness");
-  }
-  execute();
-}, []);
+import "@glair/web-components/lib/{web-component-name}";
+// Now you can render <glair-webcam></glair-webcam>
 ```
 
 ---
 
 ## List of GLAIR Web Components
 
-| Name                                  | Tag                        | `<script>`                     | ES Module               |
-| ------------------------------------- | -------------------------- | ------------------------------ | ----------------------- |
-| [Passive Liveness](#passive-liveness) | `<glair-passive-liveness>` | `/standalone/passive-liveness` | `/lib/passive-liveness` |
-| [Active Liveness](#active-liveness)   | _in development_           | _in development_               | _in development_        |
+| No  | Name              | Tag              | `<script>`           | ES Module    | Demo                                                                                                                                                                                |
+| --- | ----------------- | ---------------- | -------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `lib/webcam` | [![Edit dazzling-tristan-wkxhpc](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
 
 ---
 
-## Passive Liveness
+## Webcam
 
-This component accesses `window` object on mount.
+This component provides you an easier access for webcam. It is a wrapper around [MediaDevices.getUserMedia()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
 
-### Event Listeners
+### Attributes
 
-1. `onscreenshot`
+| Name         | Type    | Default Value | Notes                                                                                                                                                                                                     |
+| ------------ | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width`      | number  | `480`         | The width of the webcam.                                                                                                                                                                                  |
+| `height`     | number  | `480`         | The height of the webcam.                                                                                                                                                                                 |
+| `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
+| `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
 
-Invoked when user presses camera button. The `event` parameter contains image in `Blob` format. Add a listener to this event so you can send the image to your server for detecting passive liveness.
+### Slots
 
-```js
-const pl = document.querySelector("glair-passive-liveness");
-pl.addEventListener("onscreenshot", async (event) => {
-  console.log(event.detail.payload);
-});
+Slots here mean the [Web Component Slot element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). This allows you to plug-in your own custom elements to the slot and override the default behavior.
+
+| Slot Name          | Note Case                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| `user-media`       | Displayed when the component receives a media stream (camera access granted).          |
+| `user-media-error` | Displayed when the component can't receive a media stream (camera access not granted). |
+
+### Methods
+
+| Method signature | Return Value      | Description                                                                      |
+| ---------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `screenshot()`   | `Promise<string>` | Returns a promise of base64 encoded string of the current image shown on webcam. |
+
+### Sample Usages
+
+Sample usage for `glair-webcam` has been provided at [Basic Usage](#basic-usage) section.
+
+Sample usage with custom element for slot `user-media-error`:
+
+```html
+<glair-webcam>
+  <div
+    slot="user-media-error"
+    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"
+  >
+    Camera permission denied
+  </div>
+</glair-webcam>
 ```
 
-### Active Liveness
+### Use Cases
 
-```js
-// In development
-```
-
-We also plan to create a more compose-able web components so you can have more control.
+`glair-webcam` will help you to create OCR or face biometrics apps. You can use it to take a photo of the user's face and send it to [GLAIR Vision's API](https://docs.glair.ai) for liveness detection. You can also use it to take a photo of documents (e.g. KTP, Passport) and send it to [GLAIR Vision's API](https://docs.glair.ai).

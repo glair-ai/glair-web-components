@@ -1,8 +1,63 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 body {
-  background-color: white;
-  min-height: 100vh;
+  font-family: sans-serif;
+}
+
+#webcam-wrapper {
+  width: 300px;
+  margin: 0 auto;
+}
+
+#instruction {
+  background: black;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+#sshot-btn {
+  cursor: pointer;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  background: red;
+}
+
+#hint {
+  position: fixed;
+  top: 1rem;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  padding: 0 2rem;
+  overflow-y: auto;
+}
+
+#hint-wrapper {
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  margin: 0 auto;
+  max-width: 300px;
+  gap: 1rem;
+}
+
+#hint-wrapper > .hint-elmt {
+  font-size: 0.875rem;
+}
+
+#start-btn {
+  padding: 0.5rem 3rem;
+  border-radius: 0.5rem;
+  border: 2px solid black;
+  align-self: center;
+  cursor: pointer;
+  background: white;
+  font-size: 1rem;
 }

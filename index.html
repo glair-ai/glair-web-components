@@ -2,19 +2,56 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="./src/assets/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./src/index.css" />
-    <script type="module" src="/src/components/passive-liveness.ts"></script>
+    <script type="module" src="/src/components/webcam.ts"></script>
   </head>
   <body>
-    <glair-passive-liveness> </glair-passive-liveness>
+    <div id="webcam-wrapper">
+      <glair-webcam width="300" height="300" mirrored></glair-webcam>
+      <div id="instruction">
+        <p style="font-weight: bold">Take photo</p>
+        <button id="sshot-btn"></button>
+        <p>Make sure your face is clearly visible on the marked area</p>
+      </div>
+    </div>
+    <div id="hint">
+      <div id="hint-wrapper">
+        <strong>To ease the verification process, please make sure:</strong>
+        <div class="hint-elmt">
+          1. Grants camera or photo gallery access permission to your browser
+        </div>
+        <div class="hint-elmt">
+          2. Do not wear masks, glasses, hats or other accessories that cover
+          your face
+        </div>
+        <div class="hint-elmt">
+          3. Take photo in a place with sufficient lighting, not too dark or too
+          bright
+        </div>
+        <div class="hint-elmt">
+          4. Take photo without anyone else on the screen
+        </div>
+        <button id="start-btn"><strong>START</strong></button>
+      </div>
+    </div>
   </body>
   <script>
-    const pl = document.querySelector("glair-passive-liveness");
-    pl.addEventListener("onscreenshot", (event) => {
-      console.log(event.detail.payload);
+    const glairWebcam = document.querySelector("glair-webcam");
+    const btn = document.querySelector("#sshot-btn");
+    const startBtn = document.querySelector("#start-btn");
+
+    btn.addEventListener("click", async () => {
+      const sshot = await glairWebcam.screenshot();
+      const fetchSshot = await fetch(sshot);
+      const blob = await fetchSshot.blob();
+      console.log(sshot, blob);
+    });
+
+    startBtn.addEventListener("click", () => {
+      startBtn.parentElement.parentElement.remove();
     });
   </script>
 </html>
