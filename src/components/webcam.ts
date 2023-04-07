@@ -25,9 +25,29 @@ export class Webcam extends TailwindElement {
   @state()
   _isUserMedia = false;
 
+  @state()
+  _stream: MediaStream | null = null;
+
+  // Why need this:
+  // 1. User navigates to a page with getUserMedia needs time.
+  // 2. Before userGetMedia returns, user navigates to other page.
+  // 3. disconnectedCallback is called but the stopStream will not have effect as there's no stream
+  // So we keep track of isMounted and call stopStream after getUserMedia returns if the component is unmounted.
+  @state()
+  _isMounted = true;
+
   async connectedCallback() {
     super.connectedCallback();
     await this.requestUserMedia();
+  }
+
+  async disconnectedCallback() {
+    super.disconnectedCallback();
+    this._isMounted = false;
+
+    // Why need this: when the web is Single Page Application (SPA) and user navigates to another page.
+    // As it's an SPA, it will not be a full refresh. Hence, if we don't stop the stream, the camera will be still active.
+    this.stopStream();
   }
 
   async requestUserMedia() {
@@ -35,11 +55,23 @@ export class Webcam extends TailwindElement {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: this.facingMode },
       });
+      this._stream = stream;
       this.videoEl.srcObject = stream;
       this._isUserMedia = true;
+
+      if (!this._isMounted) {
+        this.stopStream();
+      }
     } catch (err) {
-      console.error("Error occured", err);
+      console.log("Error occured", err);
     }
+  }
+
+  stopStream() {
+    this._stream?.getTracks().forEach((track) => {
+      this._stream?.removeTrack(track);
+      track.stop();
+    });
   }
 
   async screenshot() {

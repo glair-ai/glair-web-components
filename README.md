@@ -180,4 +180,4 @@ Sample usage with custom element for slot `user-media-error`:
 
 ### Use Cases
 
-`glair-webcam` will help you to create OCR or face biometrics apps. You can use it to take a photo of the user's face and send it to [GLAIR Vision's API](https://docs.glair.ai) for liveness detection. You can also use it to take a photo of documents (e.g. KTP, Passport) and send it to [GLAIR Vision's API](https://docs.glair.ai).
+`glair-webcam` will help you to create OCR or face biometrics UI. You can use it to take photos of documents (e.g. KTP, Passport) or the user's face and send it to [GLAIR Vision's API](https://docs.glair.ai) for OCR & liveness detection.
