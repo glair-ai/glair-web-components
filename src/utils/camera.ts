@@ -28,7 +28,36 @@ function getCanvas(props: ScreenshotProps) {
       ctx.scale(-1, 1);
     }
 
-    ctx.drawImage(ref, 0, 0, canvas.width, canvas.height);
+    // https://www.w3schools.com/tags/canvas_drawimage.asp
+    if (canvas.width === canvas.height) {
+      if (ref.videoWidth > ref.videoHeight) {
+        ctx.drawImage(
+          ref,
+          (ref.videoWidth - ref.videoHeight) / 2,
+          0,
+          ref.videoHeight,
+          ref.videoHeight,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+      } else {
+        ctx.drawImage(
+          ref,
+          0,
+          (ref.videoHeight - ref.videoWidth) / 2,
+          ref.videoWidth,
+          ref.videoWidth,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+      }
+    } else {
+      ctx.drawImage(ref, 0, 0, canvas.width, canvas.height);
+    }
 
     // invert mirroring
     if (props.mirrored) {
