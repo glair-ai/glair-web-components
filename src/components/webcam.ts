@@ -39,6 +39,19 @@ export class Webcam extends TailwindElement {
   async connectedCallback() {
     super.connectedCallback();
     await this.requestUserMedia();
+
+    const setMaximumSize = () => {
+      const MAX_LANDSCAPE_ASPECT_RATIO = 4 / 3;
+      const MAX_PORTRAIT_ASPECT_RATIO = 3 / 4;
+
+      if (this.width / this.height > MAX_LANDSCAPE_ASPECT_RATIO) {
+        this.width = this.height * MAX_LANDSCAPE_ASPECT_RATIO;
+      } else if (this.width / this.height < MAX_PORTRAIT_ASPECT_RATIO) {
+        this.width = this.height * MAX_PORTRAIT_ASPECT_RATIO;
+      }
+    };
+
+    setMaximumSize();
   }
 
   async disconnectedCallback() {

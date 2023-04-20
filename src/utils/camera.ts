@@ -15,10 +15,31 @@ function getCanvas(props: ScreenshotProps) {
 
   let canvasWidth = width;
   let canvasHeight = height;
+  let aspectRatio: number;
 
   let canvas = document.createElement("canvas");
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+
+  const setCanvasSize = () => {
+    const MAX_LANDSCAPE_ASPECT_RATIO = 4 / 3;
+    const MAX_PORTRAIT_ASPECT_RATIO = 3 / 4;
+
+    if (canvasWidth / canvasHeight > MAX_LANDSCAPE_ASPECT_RATIO) {
+      aspectRatio = MAX_LANDSCAPE_ASPECT_RATIO;
+      canvas.width = canvasHeight * aspectRatio;
+      canvas.height = canvasHeight;
+    } else if (canvasWidth / canvasHeight < MAX_PORTRAIT_ASPECT_RATIO) {
+      aspectRatio = MAX_PORTRAIT_ASPECT_RATIO;
+      canvas.width = canvasHeight * aspectRatio;
+      canvas.height = canvasHeight;
+    } else {
+      aspectRatio = canvasWidth / canvasHeight;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+    }
+  };
+
+  setCanvasSize();
+
   let ctx = canvas.getContext("2d");
 
   if (ctx && canvas) {
@@ -28,36 +49,46 @@ function getCanvas(props: ScreenshotProps) {
       ctx.scale(-1, 1);
     }
 
-    // https://www.w3schools.com/tags/canvas_drawimage.asp
-    if (canvas.width === canvas.height) {
-      if (ref.videoWidth > ref.videoHeight) {
-        ctx.drawImage(
-          ref,
-          (ref.videoWidth - ref.videoHeight) / 2,
-          0,
-          ref.videoHeight,
-          ref.videoHeight,
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
+    const getCenterImageFromWebcam = () => {
+      let takeWidth: number;
+      let takeHeight: number;
+      let translateX: number;
+      let translateY: number;
+
+      if (ref.videoWidth >= ref.videoHeight) {
+        takeWidth = ref.videoHeight * aspectRatio;
+        takeHeight = ref.videoHeight;
+        translateX = (ref.videoWidth - takeWidth) / 2;
+        translateY = 0;
       } else {
-        ctx.drawImage(
-          ref,
-          0,
-          (ref.videoHeight - ref.videoWidth) / 2,
-          ref.videoWidth,
-          ref.videoWidth,
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
+        takeWidth = ref.videoWidth;
+        takeHeight = ref.videoWidth / aspectRatio;
+        translateX = 0;
+        translateY = (ref.videoHeight - takeHeight) / 2;
       }
-    } else {
-      ctx.drawImage(ref, 0, 0, canvas.width, canvas.height);
-    }
+
+      return {
+        takeWidth,
+        takeHeight,
+        translateX,
+        translateY,
+      };
+    };
+
+    const { takeWidth, takeHeight, translateX, translateY } =
+      getCenterImageFromWebcam();
+
+    ctx.drawImage(
+      ref,
+      translateX,
+      translateY,
+      takeWidth,
+      takeHeight,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
 
     // invert mirroring
     if (props.mirrored) {
