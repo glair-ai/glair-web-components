@@ -141,10 +141,19 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 | Name         | Type    | Default Value | Notes                                                                                                                                                                                                     |
 | ------------ | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `width`      | number  | `480`         | The width of the webcam.                                                                                                                                                                                  |
-| `height`     | number  | `480`         | The height of the webcam.                                                                                                                                                                                 |
+| `width`      | number  | `480`         | The width of the webcam and the width of the screenshot's result.                                                                                                                                         |
+| `height`     | number  | `480`         | The height of the webcam and the height of the screenshot's result.                                                                                                                                       |
 | `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
 | `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
+
+The purpose of utilizing the width and height parameters to establish the size of the webcam and screenshot is to limit them to ensure that the resulting screenshot is consistently identical to the displayed webcam stream.
+
+The webcam component is further restricted to a maximum aspect ratio of 4:3 for landscape mode and 3:4 for portrait mode. This limitation is implemented to match the aspect ratio commonly used on cameras, as failing to comply would cause the display to become cropped.
+
+There are two specific locations in the implementation where the width and height are constrained:
+
+1. The maximum size of the webcam display is restricted through the `setMaximumSize()` function in the [webcam.ts](src/components/webcam.ts) file.
+1. The size of the screenshot is constrained through the `setCanvasSize()` function in the [camera.ts](src/utils/camera.ts) file.
 
 ### Slots
 
