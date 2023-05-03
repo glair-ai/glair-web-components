@@ -148,12 +148,13 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 The purpose of utilizing the width and height parameters to establish the size of the webcam and screenshot is to limit them to ensure that the resulting screenshot is consistently identical to the displayed webcam stream.
 
-The webcam component is further restricted to a maximum aspect ratio of 4:3 for landscape mode and 3:4 for portrait mode. This limitation is implemented to match the aspect ratio commonly used on cameras, as failing to comply would cause the display to become cropped.
+### Recommendation
 
-There are two specific locations in the implementation where the width and height are constrained:
+For setting the width and height, it's advisable to set the aspect ratio of width divided by height at 1:1, with a maximum ratio of 4:3 and a minimum ratio of 3:4. This is because 1:1 aspect ratio is optimal for different devices such as mobile cameras and PC webcams.
 
-1. The maximum size of the webcam display is restricted through the `setMaximumSize()` function in the [webcam.ts](src/components/webcam.ts) file.
-1. The size of the screenshot is constrained through the `setCanvasSize()` function in the [camera.ts](src/utils/camera.ts) file.
+The reason for this recommendation is to ensure that the camera can capture the central part of the camera at various resolutions. For instance, most PC webcams have an aspect ratio of 4:3, while mobile webcams mostly have an aspect ratio of 3:4.
+
+By using an aspect ratio of 1:1, the camera will be more compatible with different devices and resulting in a better-aligned and user-friendly image. This makes it easier for individuals to position themselves in the center of the frame when taking pictures or recording videos.
 
 ### Slots
 

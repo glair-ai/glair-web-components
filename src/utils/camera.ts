@@ -15,30 +15,11 @@ function getCanvas(props: ScreenshotProps) {
 
   let canvasWidth = width;
   let canvasHeight = height;
-  let aspectRatio: number;
 
   let canvas = document.createElement("canvas");
 
-  const setCanvasSize = () => {
-    const MAX_LANDSCAPE_ASPECT_RATIO = 4 / 3;
-    const MAX_PORTRAIT_ASPECT_RATIO = 3 / 4;
-
-    if (canvasWidth / canvasHeight > MAX_LANDSCAPE_ASPECT_RATIO) {
-      aspectRatio = MAX_LANDSCAPE_ASPECT_RATIO;
-      canvas.width = canvasHeight * aspectRatio;
-      canvas.height = canvasHeight;
-    } else if (canvasWidth / canvasHeight < MAX_PORTRAIT_ASPECT_RATIO) {
-      aspectRatio = MAX_PORTRAIT_ASPECT_RATIO;
-      canvas.width = canvasHeight * aspectRatio;
-      canvas.height = canvasHeight;
-    } else {
-      aspectRatio = canvasWidth / canvasHeight;
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-    }
-  };
-
-  setCanvasSize();
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
 
   let ctx = canvas.getContext("2d");
 
@@ -55,16 +36,16 @@ function getCanvas(props: ScreenshotProps) {
       let translateX: number;
       let translateY: number;
 
-      if (ref.videoWidth >= ref.videoHeight) {
-        takeWidth = ref.videoHeight * aspectRatio;
+      if (canvasWidth / canvasHeight - ref.videoWidth / ref.videoHeight > 0) {
+        takeWidth = ref.videoWidth;
+        takeHeight = (ref.videoWidth * canvasHeight) / canvasWidth;
+        translateX = 0;
+        translateY = (ref.videoHeight - takeHeight) / 2;
+      } else {
+        takeWidth = (canvasWidth / canvasHeight) * ref.videoHeight;
         takeHeight = ref.videoHeight;
         translateX = (ref.videoWidth - takeWidth) / 2;
         translateY = 0;
-      } else {
-        takeWidth = ref.videoWidth;
-        takeHeight = ref.videoWidth / aspectRatio;
-        translateX = 0;
-        translateY = (ref.videoHeight - takeHeight) / 2;
       }
 
       return {
@@ -86,8 +67,8 @@ function getCanvas(props: ScreenshotProps) {
       takeHeight,
       0,
       0,
-      canvas.width,
-      canvas.height
+      canvasWidth,
+      canvasHeight
     );
 
     // invert mirroring
