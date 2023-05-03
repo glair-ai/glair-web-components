@@ -17,8 +17,10 @@ function getCanvas(props: ScreenshotProps) {
   let canvasHeight = height;
 
   let canvas = document.createElement("canvas");
+
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
+
   let ctx = canvas.getContext("2d");
 
   if (ctx && canvas) {
@@ -28,7 +30,46 @@ function getCanvas(props: ScreenshotProps) {
       ctx.scale(-1, 1);
     }
 
-    ctx.drawImage(ref, 0, 0, canvas.width, canvas.height);
+    const getCenterImageFromWebcam = () => {
+      let takeWidth: number;
+      let takeHeight: number;
+      let translateX: number;
+      let translateY: number;
+
+      if (canvasWidth / canvasHeight - ref.videoWidth / ref.videoHeight > 0) {
+        takeWidth = ref.videoWidth;
+        takeHeight = (ref.videoWidth * canvasHeight) / canvasWidth;
+        translateX = 0;
+        translateY = (ref.videoHeight - takeHeight) / 2;
+      } else {
+        takeWidth = (canvasWidth / canvasHeight) * ref.videoHeight;
+        takeHeight = ref.videoHeight;
+        translateX = (ref.videoWidth - takeWidth) / 2;
+        translateY = 0;
+      }
+
+      return {
+        takeWidth,
+        takeHeight,
+        translateX,
+        translateY,
+      };
+    };
+
+    const { takeWidth, takeHeight, translateX, translateY } =
+      getCenterImageFromWebcam();
+
+    ctx.drawImage(
+      ref,
+      translateX,
+      translateY,
+      takeWidth,
+      takeHeight,
+      0,
+      0,
+      canvasWidth,
+      canvasHeight
+    );
 
     // invert mirroring
     if (props.mirrored) {
