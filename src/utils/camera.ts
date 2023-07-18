@@ -36,13 +36,16 @@ function getCanvas(props: ScreenshotProps) {
       let translateX: number;
       let translateY: number;
 
-      if (canvasWidth / canvasHeight - ref.videoWidth / ref.videoHeight > 0) {
+      const canvasAspectRatio = canvasWidth / canvasHeight;
+      const videoAspectRatio = ref.videoWidth / ref.videoHeight;
+
+      if (canvasAspectRatio > videoAspectRatio) {
         takeWidth = ref.videoWidth;
-        takeHeight = (ref.videoWidth * canvasHeight) / canvasWidth;
+        takeHeight = ref.videoWidth * (1 / canvasAspectRatio);
         translateX = 0;
         translateY = (ref.videoHeight - takeHeight) / 2;
       } else {
-        takeWidth = (canvasWidth / canvasHeight) * ref.videoHeight;
+        takeWidth = ref.videoHeight * canvasAspectRatio;
         takeHeight = ref.videoHeight;
         translateX = (ref.videoWidth - takeWidth) / 2;
         translateY = 0;
@@ -59,6 +62,7 @@ function getCanvas(props: ScreenshotProps) {
     const { takeWidth, takeHeight, translateX, translateY } =
       getCenterImageFromWebcam();
 
+    // See https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
     ctx.drawImage(
       ref,
       translateX,

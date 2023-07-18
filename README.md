@@ -146,16 +146,6 @@ This component provides you an easier access for webcam. It is a wrapper around 
 | `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
 | `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
 
-The purpose of utilizing the width and height parameters to establish the size of the webcam and screenshot is to limit them to ensure that the resulting screenshot is consistently identical to the displayed webcam stream.
-
-### Recommendation
-
-For setting the width and height, it's advisable to set the aspect ratio of width divided by height at 1:1, with a maximum ratio of 4:3 and a minimum ratio of 3:4. This is because 1:1 aspect ratio is optimal for different devices such as mobile cameras and PC webcams.
-
-The reason for the recommendation of using an aspect ratio of 1:1 is to ensure that the camera can capture the central part of the image at various resolutions, as most PC webcams have an aspect ratio of 4:3 while mobile webcams mostly have an aspect ratio of 3:4. With an aspect ratio of 1:1, the component can display 3 out of a maximum of 4 parts on both webcams. On the other hand, if a component's aspect ratio is set to 4:3, most PC webcams will be captured perfectly, but mobile webcams will take a less central position.
-
-By using an aspect ratio of 1:1, the camera will be more compatible with different devices and resulting in a better-aligned and user-friendly image. This makes it easier for individuals to position themselves in the center of the frame when taking pictures or recording videos.
-
 ### Slots
 
 Slots here mean the [Web Component Slot element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). This allows you to plug-in your own custom elements to the slot and override the default behavior.
