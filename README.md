@@ -141,8 +141,8 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 | Name         | Type    | Default Value | Notes                                                                                                                                                                                                     |
 | ------------ | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `width`      | number  | `480`         | The width of the webcam.                                                                                                                                                                                  |
-| `height`     | number  | `480`         | The height of the webcam.                                                                                                                                                                                 |
+| `width`      | number  | `480`         | The width of the webcam and the width of the screenshot's result.                                                                                                                                         |
+| `height`     | number  | `480`         | The height of the webcam and the height of the screenshot's result.                                                                                                                                       |
 | `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
 | `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
 
