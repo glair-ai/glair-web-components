@@ -22,11 +22,29 @@ export class Webcam extends TailwindElement {
   @property({ type: Boolean })
   mirrored = false;
 
+  @property({ type: String })
+  screenshotArea = JSON.stringify({
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    enableOverlay: false,
+  });
+
   @state()
   _isUserMedia = false;
 
   @state()
   _stream: MediaStream | null = null;
+
+  @state()
+  _screenshotAreaObj: ScreenshotArea = {
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    enableOverlay: false,
+  };
 
   // Why need this:
   // 1. User navigates to a page with getUserMedia needs time.
@@ -39,6 +57,7 @@ export class Webcam extends TailwindElement {
   async connectedCallback() {
     super.connectedCallback();
     await this.requestUserMedia();
+    this._screenshotAreaObj = this.preProcessScreenshotArea();
   }
 
   async disconnectedCallback() {
@@ -67,6 +86,15 @@ export class Webcam extends TailwindElement {
     }
   }
 
+  preProcessScreenshotArea() {
+    const cs: ScreenshotArea = JSON.parse(this.screenshotArea);
+
+    cs.width = cs.x + cs.width > 100 ? 100 - cs.x : cs.width;
+    cs.height = cs.y + cs.height > 100 ? 100 - cs.y : cs.height;
+
+    return cs;
+  }
+
   stopStream() {
     this._stream?.getTracks().forEach((track) => {
       this._stream?.removeTrack(track);
@@ -80,6 +108,7 @@ export class Webcam extends TailwindElement {
       width: this.width,
       height: this.height,
       mirrored: this.mirrored,
+      screenshotArea: this._screenshotAreaObj,
     });
   }
 
@@ -95,7 +124,7 @@ export class Webcam extends TailwindElement {
           style="width: ${this.width}px; height: ${this
             .height}px; transform: scaleX(${this.mirrored ? "-1" : "1"});"
         ></video>
-        ${this.userMediaError()} ${this.userMedia()}
+        ${this.userMediaError()} ${this.userMedia()} ${this.screenshotOverlay()}
       </div>
     `;
   }
@@ -158,10 +187,31 @@ export class Webcam extends TailwindElement {
       </div>
     `;
   }
+
+  screenshotOverlay() {
+    if (!this._screenshotAreaObj?.enableOverlay) return html``;
+
+    return html`
+      <div
+        class="absolute border border-dashed border-red-500"
+        style="top: ${this._screenshotAreaObj?.y}%; left: ${this
+          ._screenshotAreaObj?.x}%; width: ${this._screenshotAreaObj
+          ?.width}%; height: ${this._screenshotAreaObj?.height}%"
+      ></div>
+    `;
+  }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
     "glair-webcam": Webcam;
   }
+}
+
+export interface ScreenshotArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  enableOverlay?: boolean;
 }

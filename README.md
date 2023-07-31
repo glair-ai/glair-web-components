@@ -139,12 +139,25 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 ### Attributes
 
-| Name         | Type    | Default Value | Notes                                                                                                                                                                                                     |
-| ------------ | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `width`      | number  | `480`         | The width of the webcam and the width of the screenshot's result.                                                                                                                                         |
-| `height`     | number  | `480`         | The height of the webcam and the height of the screenshot's result.                                                                                                                                       |
-| `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
-| `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
+| Name             | Type    | Default Value | Notes                                                                                                                                                                                                     |
+| ---------------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width`          | number  | `480`         | The width of the webcam and the width of the screenshot's result.                                                                                                                                         |
+| `height`         | number  | `480`         | The height of the webcam and the height of the screenshot's result.                                                                                                                                       |
+| `facingMode`     | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
+| `mirrored`       | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
+| `screenshotArea` | string  | `{"x":0...}`  | Enables custom and configurable screenshots, defining the area and overlay display. More detail [here](#screenshot-area).                                                                                 |
+
+#### Screenshot Area
+
+`screenshotArea` property is a JSON object string that enables custom screenshots with specific area and overlay configurations. This property consists of five sub-properties:
+
+| Name            | Type    | Default Value | Notes                                                                                                                                                                                 |
+| --------------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `x`             | number  | `0`           | Represents the horizontal starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the left-most coordinate of the region to capture. |
+| `y`             | number  | `0`           | Represents the vertical starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the top-most coordinate of the region to capture.    |
+| `width`         | number  | `100`         | Determines the width (**_as a percentage_**) of the screenshot area. It defines the horizontal extent of the region to capture from the starting point `x`.                           |
+| `height`        | number  | `100`         | Determines the height (**_as a percentage_**) of the screenshot area. It defines the vertical extent of the region to capture from the starting point `y`.                            |
+| `enableOverlay` | boolean | `false`       | A boolean that determines whether the overlay for the screenshot should be displayed or not                                                                                           |
 
 ### Slots
 
