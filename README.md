@@ -40,11 +40,11 @@ Specify version number if you want to use a specific version. For example:
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/web-components@0.0.1-beta.5/standalone/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components@0.0.1-beta.6/standalone/{web-component-name}.js"
 ></script>
 ```
 
-Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo link](https://codesandbox.io/embed/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark)):
+Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo link](https://codesandbox.io/embed/glair-web-component-sample-webcam-wkxhpc?fontsize=14&hidenavigation=1&theme=dark)):
 
 ```html
 <!DOCTYPE html>
@@ -137,9 +137,9 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ## List of GLAIR Web Components
 
-| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                |
-| --- | ----------------- | ---------------- | -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit dazzling-tristan-wkxhpc](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
+| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                                             |
+| --- | ----------------- | ---------------- | -------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit GLAIR Web Component Sample – Webcam](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/glair-web-component-sample-webcam-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
 
 ---
 
