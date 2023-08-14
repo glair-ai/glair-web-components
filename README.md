@@ -40,11 +40,11 @@ Specify version number if you want to use a specific version. For example:
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/web-components@0.0.1-beta.2/standalone/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components@0.0.1-beta.6/standalone/{web-component-name}.js"
 ></script>
 ```
 
-Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo link](https://codesandbox.io/embed/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark)):
+Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo link](https://codesandbox.io/embed/glair-web-component-sample-webcam-wkxhpc?fontsize=14&hidenavigation=1&theme=dark)):
 
 ```html
 <!DOCTYPE html>
@@ -93,6 +93,16 @@ Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo 
   ></script>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
+    glairWebcam.setAttribute(
+      "screenshotArea",
+      JSON.stringify({
+        x: 25,
+        y: 25,
+        width: 50,
+        height: 50,
+        enableOverlay: true,
+      })
+    );
     const btn = document.querySelector("#sshot-btn");
 
     btn.addEventListener("click", async () => {
@@ -127,9 +137,9 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ## List of GLAIR Web Components
 
-| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                |
-| --- | ----------------- | ---------------- | -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit dazzling-tristan-wkxhpc](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/dazzling-tristan-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
+| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                                             |
+| --- | ----------------- | ---------------- | -------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit GLAIR Web Component Sample – Webcam](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/glair-web-component-sample-webcam-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
 
 ---
 
@@ -139,12 +149,25 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 ### Attributes
 
-| Name         | Type    | Default Value | Notes                                                                                                                                                                                                     |
-| ------------ | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `width`      | number  | `480`         | The width of the webcam and the width of the screenshot's result.                                                                                                                                         |
-| `height`     | number  | `480`         | The height of the webcam and the height of the screenshot's result.                                                                                                                                       |
-| `facingMode` | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
-| `mirrored`   | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
+| Name             | Type    | Default Value | Notes                                                                                                                                                                                                     |
+| ---------------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width`          | number  | `480`         | The width of the webcam and the width of the screenshot's result.                                                                                                                                         |
+| `height`         | number  | `480`         | The height of the webcam and the height of the screenshot's result.                                                                                                                                       |
+| `facingMode`     | string  | `user`        | Corresponds to `MediaTrackConstraints.facingMode`. Set to `environment` to use rear camera. See [MDN Docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/facingMode) for detail. |
+| `mirrored`       | boolean | `false`       | Set to `true` to mirror the video horizontally.                                                                                                                                                           |
+| `screenshotArea` | string  | `{"x":0...}`  | Enables custom and configurable screenshots, defining the area and overlay display. More detail [here](#screenshot-area).                                                                                 |
+
+#### Screenshot Area
+
+`screenshotArea` property is a JSON object string that enables custom screenshots with specific area and overlay configurations. This property consists of five sub-properties:
+
+| Name            | Type    | Default Value | Notes                                                                                                                                                                                          |
+| --------------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `x`             | number  | `0`           | Represents the horizontal starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the left-most coordinate of the region to capture. [0, 100] |
+| `y`             | number  | `0`           | Represents the vertical starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the top-most coordinate of the region to capture. [0, 100]    |
+| `width`         | number  | `100`         | Determines the width (**_as a percentage_**) of the screenshot area. It defines the horizontal extent of the region to capture from the starting point `x`. (0, 100]                           |
+| `height`        | number  | `100`         | Determines the height (**_as a percentage_**) of the screenshot area. It defines the vertical extent of the region to capture from the starting point `y`. (0, 100]                            |
+| `enableOverlay` | boolean | `false`       | A boolean that determines whether the overlay for the screenshot should be displayed or not                                                                                                    |
 
 ### Slots
 

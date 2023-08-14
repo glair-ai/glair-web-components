@@ -1,8 +1,11 @@
+import { ScreenshotArea } from "../components/webcam";
+
 interface ScreenshotProps {
   ref: HTMLVideoElement;
   width: number;
   height: number;
   mirrored?: boolean;
+  screenshotArea: ScreenshotArea;
 }
 
 export function getScreenshot(props: ScreenshotProps) {
@@ -11,10 +14,16 @@ export function getScreenshot(props: ScreenshotProps) {
 }
 
 function getCanvas(props: ScreenshotProps) {
-  const { ref, width = 480, height = 480, mirrored = false } = props;
+  const {
+    ref,
+    width = 480,
+    height = 480,
+    mirrored = false,
+    screenshotArea,
+  } = props;
 
-  let canvasWidth = width;
-  let canvasHeight = height;
+  let canvasWidth = (width * screenshotArea.width) / 100;
+  let canvasHeight = (height * screenshotArea.height) / 100;
 
   let canvas = document.createElement("canvas");
 
@@ -36,7 +45,7 @@ function getCanvas(props: ScreenshotProps) {
       let translateX: number;
       let translateY: number;
 
-      const canvasAspectRatio = canvasWidth / canvasHeight;
+      const canvasAspectRatio = width / height;
       const videoAspectRatio = ref.videoWidth / ref.videoHeight;
 
       if (canvasAspectRatio > videoAspectRatio) {
@@ -50,6 +59,28 @@ function getCanvas(props: ScreenshotProps) {
         translateX = (ref.videoWidth - takeWidth) / 2;
         translateY = 0;
       }
+
+      const getScreenshotArea = () => {
+        translateX =
+          translateX + Math.round((screenshotArea.x / 100) * takeWidth);
+        translateY =
+          translateY + Math.round((screenshotArea.y / 100) * takeHeight);
+        takeWidth = (takeWidth * screenshotArea.width) / 100;
+        takeHeight = (takeHeight * screenshotArea.height) / 100;
+
+        if (mirrored) {
+          translateX = ref.videoWidth - (translateX + takeWidth);
+        }
+
+        return {
+          takeWidth,
+          takeHeight,
+          translateX,
+          translateY,
+        };
+      };
+
+      ({ takeWidth, takeHeight, translateX, translateY } = getScreenshotArea());
 
       return {
         takeWidth,
@@ -76,7 +107,7 @@ function getCanvas(props: ScreenshotProps) {
     );
 
     // invert mirroring
-    if (props.mirrored) {
+    if (mirrored) {
       ctx.scale(-1, 1);
       ctx.translate(-canvas.width, 0);
     }

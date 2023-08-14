@@ -40,6 +40,16 @@
   </body>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
+    glairWebcam.setAttribute(
+      "screenshotArea",
+      JSON.stringify({
+        x: 25,
+        y: 25,
+        width: 50,
+        height: 50,
+        enableOverlay: true,
+      })
+    );
     const btn = document.querySelector("#sshot-btn");
     const startBtn = document.querySelector("#start-btn");
 
