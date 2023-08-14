@@ -40,7 +40,7 @@ Specify version number if you want to use a specific version. For example:
 ```html
 <script
   type="module"
-  src="https://unpkg.com/@glair/web-components@0.0.1-beta.2/standalone/{web-component-name}.js"
+  src="https://unpkg.com/@glair/web-components@0.0.1-beta.5/standalone/{web-component-name}.js"
 ></script>
 ```
 
@@ -93,6 +93,16 @@ Fully working sample using [glair-webcam](#webcam) component ([CodeSandbox demo 
   ></script>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");
+    glairWebcam.setAttribute(
+      "screenshotArea",
+      JSON.stringify({
+        x: 25,
+        y: 25,
+        width: 50,
+        height: 50,
+        enableOverlay: true,
+      })
+    );
     const btn = document.querySelector("#sshot-btn");
 
     btn.addEventListener("click", async () => {
@@ -151,13 +161,13 @@ This component provides you an easier access for webcam. It is a wrapper around 
 
 `screenshotArea` property is a JSON object string that enables custom screenshots with specific area and overlay configurations. This property consists of five sub-properties:
 
-| Name            | Type    | Default Value | Notes                                                                                                                                                                                 |
-| --------------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `x`             | number  | `0`           | Represents the horizontal starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the left-most coordinate of the region to capture. |
-| `y`             | number  | `0`           | Represents the vertical starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the top-most coordinate of the region to capture.    |
-| `width`         | number  | `100`         | Determines the width (**_as a percentage_**) of the screenshot area. It defines the horizontal extent of the region to capture from the starting point `x`.                           |
-| `height`        | number  | `100`         | Determines the height (**_as a percentage_**) of the screenshot area. It defines the vertical extent of the region to capture from the starting point `y`.                            |
-| `enableOverlay` | boolean | `false`       | A boolean that determines whether the overlay for the screenshot should be displayed or not                                                                                           |
+| Name            | Type    | Default Value | Notes                                                                                                                                                                                          |
+| --------------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `x`             | number  | `0`           | Represents the horizontal starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the left-most coordinate of the region to capture. [0, 100] |
+| `y`             | number  | `0`           | Represents the vertical starting coordinate point (**_as a percentage_**) from where the screenshot will be captured. It defines the top-most coordinate of the region to capture. [0, 100]    |
+| `width`         | number  | `100`         | Determines the width (**_as a percentage_**) of the screenshot area. It defines the horizontal extent of the region to capture from the starting point `x`. (0, 100]                           |
+| `height`        | number  | `100`         | Determines the height (**_as a percentage_**) of the screenshot area. It defines the vertical extent of the region to capture from the starting point `y`. (0, 100]                            |
+| `enableOverlay` | boolean | `false`       | A boolean that determines whether the overlay for the screenshot should be displayed or not                                                                                                    |
 
 ### Slots
 

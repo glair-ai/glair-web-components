@@ -89,8 +89,17 @@ export class Webcam extends TailwindElement {
   preProcessScreenshotArea() {
     const cs: ScreenshotArea = JSON.parse(this.screenshotArea);
 
-    cs.width = cs.x + cs.width > 100 ? 100 - cs.x : cs.width;
-    cs.height = cs.y + cs.height > 100 ? 100 - cs.y : cs.height;
+    function isSizeOutBoundary(origin: number, length: number) {
+      return origin + length > 100;
+    }
+
+    if (isSizeOutBoundary(cs.x, cs.width)) {
+      cs.width = 100 - cs.x;
+    }
+
+    if (isSizeOutBoundary(cs.y, cs.height)) {
+      cs.height = 100 - cs.y;
+    }
 
     return cs;
   }
