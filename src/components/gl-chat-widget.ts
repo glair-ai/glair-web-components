@@ -7,6 +7,9 @@ export class GLChatWidget extends LitElement {
   @property({ type: String })
   url: string = "";
 
+  @property({ type: String })
+  position: "left" | "right" = "right";
+
   // Internal state
   @state()
   private widgetMode: "hidden" | "widget" | "fullScreen" = "hidden";
@@ -136,8 +139,16 @@ export class GLChatWidget extends LitElement {
     .chat-widget-container {
       position: fixed;
       bottom: 20px;
-      right: 20px;
       z-index: 9999;
+      transition: right 0.3s ease, left 0.3s ease;
+    }
+
+    .chat-widget-container[data-position="right"] {
+      right: 20px;
+    }
+
+    .chat-widget-container[data-position="left"] {
+      left: 20px;
     }
 
     .chat-toggle-button {
@@ -153,8 +164,15 @@ export class GLChatWidget extends LitElement {
       justify-content: center;
       position: absolute;
       bottom: 0;
-      right: 0;
       z-index: 10000;
+    }
+
+    .chat-toggle-button[data-position="right"] {
+      right: 0;
+    }
+
+    .chat-toggle-button[data-position="left"] {
+      left: 0;
     }
 
     .chat-toggle-button:hover {
@@ -174,6 +192,14 @@ export class GLChatWidget extends LitElement {
         0px 10px 15px -3px rgba(0, 0, 0, 0.1),
         0px 4px 6px -2px rgba(0, 0, 0, 0.05);
       bottom: 70px;
+    }
+
+    .chat-widget[data-position="right"] {
+      right: 0;
+    }
+
+    .chat-widget[data-position="left"] {
+      left: 0;
     }
 
     .chat-widget-header {
@@ -291,8 +317,12 @@ export class GLChatWidget extends LitElement {
 
   render() {
     return html`
-      <div class="chat-widget-container">
-        <div class="chat-widget" data-mode="${this.widgetMode}">
+      <div class="chat-widget-container" data-position="${this.position}">
+        <div
+          class="chat-widget"
+          data-mode="${this.widgetMode}"
+          data-position="${this.position}"
+        >
           <div class="chat-widget-header">
             <div></div>
             <div class="expand-button" @click="${this.toggleFullscreen}">
@@ -314,6 +344,7 @@ export class GLChatWidget extends LitElement {
         </div>
         <button
           class="chat-toggle-button"
+          data-position="${this.position}"
           data-expanded="${this.widgetMode !== "hidden"}"
           data-hidden="${this.widgetMode === "fullScreen"}"
           @click="${this.toggleWidget}"
