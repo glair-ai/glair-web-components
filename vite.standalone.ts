@@ -4,7 +4,11 @@ import { defineConfig } from "vite";
 export default defineConfig({
   build: {
     lib: {
-      entry: ["src/components/gl-chat-widget.ts", "src/components/webcam.ts"],
+      entry: [
+        "src/components/gl-chat-sidebar.ts",
+        "src/components/gl-chat-widget.ts",
+        "src/components/webcam.ts",
+      ],
       formats: ["es"],
     },
     emptyOutDir: false,
