@@ -1,17 +1,17 @@
+import fs from "fs";
 import { build } from "vite";
-
 async function buildAll() {
-  const entries = [
-    "src/components/gl-chat-sidebar.ts",
-    "src/components/gl-chat-widget.ts",
-    "src/components/webcam.ts",
-  ];
-  for (const entry of entries) {
+  const files = fs
+    .readdirSync("src/components")
+    .filter((file) => file !== "tailwind.element.ts")
+    .map((file) => `src/components/${file}`);
+
+  for (const file of files) {
     await build({
       configFile: false,
       build: {
         lib: {
-          entry: [entry],
+          entry: [file],
           formats: ["es"],
         },
         emptyOutDir: false,
