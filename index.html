@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./src/index.css" />
+    <script type="module" src="/src/components/gl-chat-sidebar.ts"></script>
+    <script type="module" src="/src/components/gl-chat-widget.ts"></script>
     <script type="module" src="/src/components/webcam.ts"></script>
   </head>
   <body>
@@ -37,6 +39,8 @@
         <button id="start-btn"><strong>START</strong></button>
       </div>
     </div>
+    <gl-chat-widget url="https://demo-glchat.glair.ai" position="left"></gl-chat-widget>
+    <gl-chat-sidebar url="https://demo-glchat.glair.ai" position="right"></gl-chat-widget>
   </body>
   <script>
     const glairWebcam = document.querySelector("glair-webcam");

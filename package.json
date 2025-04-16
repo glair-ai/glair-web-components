@@ -1,7 +1,7 @@
 {
   "name": "@glair/web-components",
   "license": "MIT",
-  "version": "0.0.1-beta.6",
+  "version": "0.0.1-beta.7",
   "description": "A collection of GLAIR's web components",
   "keywords": [
     "glair",
@@ -36,7 +36,8 @@
     "dev": "vite",
     "clean": "rm -rf ./lib ./standalone",
     "move-declaration": "mv lib/components/* lib/ && rm -rf lib/components lib/utils",
-    "build": "npm run clean && tsc && vite build && npm run move-declaration && vite build --config vite.standalone.ts"
+    "build-standalone": "node build-standalone.js",
+    "build": "npm run clean && tsc && vite build && npm run move-declaration && npm run build-standalone"
   },
   "dependencies": {
     "lit": "^2.6.1"
