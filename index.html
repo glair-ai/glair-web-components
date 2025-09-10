@@ -6,12 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./src/index.css" />
+    <script type="module" src="/src/components/gl-chat-gemini-live.ts"></script>
     <script type="module" src="/src/components/gl-chat-sidebar.ts"></script>
     <script type="module" src="/src/components/gl-chat-widget.ts"></script>
     <script type="module" src="/src/components/webcam.ts"></script>
   </head>
   <body>
-    <div id="webcam-wrapper">
+    <!-- <div id="webcam-wrapper">
       <glair-webcam width="300" height="300" mirrored></glair-webcam>
       <div id="instruction">
         <p style="font-weight: bold">Take photo</p>
@@ -19,7 +20,7 @@
         <p>Make sure your face is clearly visible on the marked area</p>
       </div>
     </div>
-    <div id="hint">
+    <div id="hint" style="display: none;">
       <div id="hint-wrapper">
         <strong>To ease the verification process, please make sure:</strong>
         <div class="hint-elmt">
@@ -38,11 +39,12 @@
         </div>
         <button id="start-btn"><strong>START</strong></button>
       </div>
-    </div>
-    <gl-chat-widget url="https://demo-glchat.glair.ai" position="left"></gl-chat-widget>
-    <gl-chat-sidebar url="https://demo-glchat.glair.ai" position="right"></gl-chat-widget>
+    </div> -->
+    <!-- <gl-chat-widget url="https://demo-glchat.glair.ai" position="left"></gl-chat-widget> -->
+    <!-- <gl-chat-sidebar url="https://demo-glchat.glair.ai" position="right"></gl-chat-widget> -->
+    <gl-chat-gemini-live apiKey="<API_KEY>"></gl-chat-gemini-live>
   </body>
-  <script>
+  <!-- <script>
     const glairWebcam = document.querySelector("glair-webcam");
     glairWebcam.setAttribute(
       "screenshotArea",
@@ -67,5 +69,5 @@
     startBtn.addEventListener("click", () => {
       startBtn.parentElement.parentElement.remove();
     });
-  </script>
+  </script> -->
 </html>
