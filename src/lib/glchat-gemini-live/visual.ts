@@ -164,6 +164,14 @@ export class SimpleLiveAudioVisuals extends LitElement {
   }
 
   protected firstUpdated() {
+    console.log("firstUpdate", this.inputNode, this.outputNode);
+    this.inputAnalyser = this.inputNode
+      ? new SimpleAnalyser(this.inputNode)
+      : undefined;
+    this.outputAnalyser = this.outputNode
+      ? new SimpleAnalyser(this.outputNode)
+      : undefined;
+
     this.canvas = this.shadowRoot!.querySelector("canvas") as HTMLCanvasElement;
 
     setTimeout(() => {
@@ -180,15 +188,6 @@ export class SimpleLiveAudioVisuals extends LitElement {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
     }
-  }
-
-  protected firstUpdate() {
-    this.inputAnalyser = this.inputNode
-      ? new SimpleAnalyser(this.inputNode)
-      : undefined;
-    this.outputAnalyser = this.outputNode
-      ? new SimpleAnalyser(this.outputNode)
-      : undefined;
   }
 
   protected render() {
