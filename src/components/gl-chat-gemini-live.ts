@@ -405,6 +405,11 @@ export class GLChatGeminiLive extends LitElement {
     this.initClient();
   }
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.stopRecording();
+  }
+
   render() {
     return html`
       <div>
