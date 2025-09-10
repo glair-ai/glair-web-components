@@ -147,6 +147,7 @@ export class GLChatGeminiLive extends LitElement {
 
     this.client = new GoogleGenAI({
       apiKey: this.apiKey,
+      httpOptions: { apiVersion: "v1alpha" },
     });
 
     this.outputNode.connect(this.outputAudioContext.destination);
