@@ -16,6 +16,9 @@ import {
 } from "../lib/glchat-gemini-live/utils";
 import "../lib/glchat-gemini-live/visual";
 
+const VIDEO_FRAME_INTERVAL_MS = 1000;
+const TOOL_RESPONSE_DELAY_MS = 10000;
+
 @customElement("gl-chat-gemini-live")
 export class GLChatGeminiLive extends LitElement {
   @property({ type: String })
@@ -224,7 +227,9 @@ export class GLChatGeminiLive extends LitElement {
                 }; // hard-coded function response
                 if (fc.name === "get_weather_vegas") {
                   console.log("[TOOL] call get_weather");
-                  await new Promise((r) => setTimeout(r, 10000));
+                  await new Promise((r) =>
+                    setTimeout(r, TOOL_RESPONSE_DELAY_MS)
+                  );
                   response.scheduling =
                     FunctionResponseScheduling.INTERRUPT as any;
                   // response.scheduling = FunctionResponseScheduling.WHEN_IDLE;
@@ -348,7 +353,7 @@ export class GLChatGeminiLive extends LitElement {
           "image/jpeg",
           0.7
         );
-      }, 1000);
+      }, VIDEO_FRAME_INTERVAL_MS);
 
       this.isRecording = true;
       this.updateStatus(
