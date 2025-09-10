@@ -207,7 +207,7 @@ export class GLChatGeminiLive extends LitElement {
 
             const interrupted = message.serverContent?.interrupted;
             if (interrupted) {
-              for (const source of this.sources.values()) {
+              for (const source of Array.from(this.sources)) {
                 source.stop();
                 this.sources.delete(source);
               }
