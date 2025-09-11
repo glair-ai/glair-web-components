@@ -227,7 +227,6 @@ export class GLChatGeminiLive extends LitElement {
                   scheduling: undefined,
                 }; // hard-coded function response
                 if (fc.name === "get_weather_vegas") {
-                  console.log("[TOOL] call get_weather");
                   await new Promise((r) =>
                     setTimeout(r, TOOL_RESPONSE_DELAY_MS)
                   );
@@ -241,7 +240,6 @@ export class GLChatGeminiLive extends LitElement {
                   name: fc.name,
                   response,
                 } as any as never);
-                console.log("[TOOL] finished get_weather");
               }
               this.session?.sendToolResponse({
                 functionResponses: functionResponses,

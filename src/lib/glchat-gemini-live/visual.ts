@@ -164,7 +164,6 @@ export class SimpleLiveAudioVisuals extends LitElement {
   }
 
   protected firstUpdated() {
-    console.log("firstUpdate", this.inputNode, this.outputNode);
     this.inputAnalyser = this.inputNode
       ? new SimpleAnalyser(this.inputNode)
       : undefined;
