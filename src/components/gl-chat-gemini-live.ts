@@ -16,10 +16,31 @@ import {
   decode,
   decodeAudioData,
 } from "../lib/glchat-gemini-live/utils";
-import "../lib/glchat-gemini-live/visual";
 
 const VIDEO_FRAME_INTERVAL_MS = 1000;
 const TOOL_RESPONSE_DELAY_MS = 10000;
+
+interface AudioAnalyser {
+  data: Uint8Array;
+  update(): void;
+}
+
+class SimpleAnalyser implements AudioAnalyser {
+  private analyserNode: AnalyserNode;
+  public data: Uint8Array;
+
+  constructor(audioNode: AudioNode) {
+    const audioContext = audioNode.context as AudioContext;
+    this.analyserNode = audioContext.createAnalyser();
+    this.analyserNode.fftSize = 256;
+    this.data = new Uint8Array(this.analyserNode.frequencyBinCount);
+    audioNode.connect(this.analyserNode);
+  }
+
+  update() {
+    this.analyserNode.getByteFrequencyData(this.data);
+  }
+}
 
 @customElement("gl-chat-gemini-live")
 export class GLChatGeminiLive extends LitElement {
@@ -27,6 +48,7 @@ export class GLChatGeminiLive extends LitElement {
   apiKey: string = "";
 
   videoElementRef: Ref<HTMLVideoElement> = createRef();
+  canvasRef: Ref<HTMLCanvasElement> = createRef();
 
   private client: GoogleGenAI | undefined;
   private session: Session | undefined;
@@ -36,6 +58,12 @@ export class GLChatGeminiLive extends LitElement {
   private scriptProcessorNode: ScriptProcessorNode | null | undefined;
   private sources = new Set<AudioBufferSourceNode>();
   private frameInterval: number | null | undefined;
+  private animationId?: number;
+  private ctx!: CanvasRenderingContext2D;
+
+  // Audio analysers for visualization
+  private inputAnalyser?: AudioAnalyser;
+  private outputAnalyser?: AudioAnalyser;
 
   private inputAudioContext = new (window.AudioContext ||
     (window as any).webkitAudioContext)({ sampleRate: 16000 });
@@ -61,91 +89,276 @@ export class GLChatGeminiLive extends LitElement {
   private outputNode: GainNode = this.outputAudioContext.createGain();
 
   static styles = css`
-    #status {
-      position: absolute;
-      bottom: 5vh;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      text-align: center;
-    }
-
-    #captions {
-      position: absolute;
-      bottom: 50%;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      text-align: center;
-      max-height: 2em; /* show only 2 lines */
+    :host {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
       overflow: hidden;
-
-      color: white;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 16px;
-
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end; /* keep latest at bottom */
-      white-space: pre-wrap;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    #captions:empty {
-      background: none;
-      padding: 0;
-    }
-
-    .controls {
-      z-index: 10;
+    canvas {
       position: absolute;
-      bottom: 10vh;
+      top: 0;
       left: 0;
-      right: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 10px;
-
-      button {
-        outline: none;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.1);
-        width: 64px;
-        height: 64px;
-        cursor: pointer;
-        font-size: 24px;
-        padding: 0;
-        margin: 0;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      }
-
-      button[disabled] {
-        display: none;
-      }
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        135deg,
+        #0a0a1a 0%,
+        #1a1a2e 30%,
+        #16213e 70%,
+        #0f3460 100%
+      );
     }
 
     video {
       position: absolute;
-      left: calc(50% - 160px);
-      width: 320px;
-      height: 320px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px;
+      height: 280px;
       object-fit: cover;
-      z-index: 10;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 40px rgba(74, 144, 226, 0.3);
+      z-index: 5;
+      transition: all 0.3s ease;
     }
 
-    gl-chat-gemini-live-audio-visual {
+    video.recording {
+      border-color: #ff4757;
+      box-shadow: 0 0 60px rgba(255, 71, 87, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+    }
+
+    .overlay {
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 5;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .status-bar {
+      position: absolute;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .status-bar.error {
+      background: rgba(255, 71, 87, 0.9);
+      border-color: rgba(255, 71, 87, 0.3);
+    }
+
+    .captions {
+      position: absolute;
+      bottom: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 80%;
+      text-align: center;
+      color: white;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(15px);
+      padding: 1rem 1.5rem;
+      border-radius: 20px;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      max-height: 6rem;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      white-space: pre-wrap;
+      opacity: 0;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .captions:empty {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 8vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1.5rem;
+      pointer-events: auto;
+    }
+
+    .control-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .control-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.05)
+      );
+      border-radius: inherit;
+      z-index: -1;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, #ff4757, #ff3742);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .start-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 40px rgba(255, 71, 87, 0.4);
+    }
+
+    .start-btn:disabled {
+      opacity: 0.5;
+      transform: scale(0.9);
+      pointer-events: none;
+    }
+
+    .stop-btn {
+      background: linear-gradient(135deg, #2f3542, #40444b);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stop-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 40px rgba(47, 53, 66, 0.4);
+    }
+
+    .stop-btn:disabled {
+      opacity: 0.5;
+      transform: scale(0.9);
+      pointer-events: none;
+    }
+
+    .control-icon {
+      width: 32px;
+      height: 32px;
+      fill: white;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .audio-indicator {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .audio-indicator.active {
+      opacity: 1;
+    }
+
+    .audio-bar {
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(to top, #4a90e2, #74b9ff);
+      border-radius: 2px;
+      animation: audioWave 1.5s ease-in-out infinite;
+    }
+
+    .audio-bar:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+    .audio-bar:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+    .audio-bar:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+    .audio-bar:nth-child(5) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes audioWave {
+      0%,
+      100% {
+        transform: scaleY(1);
+        opacity: 0.7;
+      }
+      50% {
+        transform: scaleY(2);
+        opacity: 1;
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      video {
+        width: 220px;
+        height: 220px;
+      }
+
+      .captions {
+        max-width: 90%;
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+      }
+
+      .control-btn {
+        width: 60px;
+        height: 60px;
+      }
+
+      .control-icon {
+        width: 28px;
+        height: 28px;
+      }
     }
   `;
 
@@ -157,9 +370,139 @@ export class GLChatGeminiLive extends LitElement {
     this.nextStartTime = this.outputAudioContext.currentTime;
   }
 
+  private initVisualization() {
+    if (!this.canvasRef.value) return;
+
+    const ctx = this.canvasRef.value.getContext("2d");
+    if (!ctx) return;
+
+    this.ctx = ctx;
+    this.resize();
+    this._animate();
+  }
+
+  private resize() {
+    if (!this.canvasRef.value) return;
+
+    const rect = this.getBoundingClientRect();
+    this.canvasRef.value.width = rect.width;
+    this.canvasRef.value.height = rect.height;
+  }
+
+  private _animate() {
+    if (!this.ctx || !this.canvasRef.value) return;
+
+    // Update audio data
+    this.inputAnalyser?.update();
+    this.outputAnalyser?.update();
+
+    const inputData = this.inputAnalyser?.data || new Uint8Array(128);
+    const outputData = this.outputAnalyser?.data || new Uint8Array(128);
+
+    // Clear canvas
+    this.ctx.clearRect(
+      0,
+      0,
+      this.canvasRef.value.width,
+      this.canvasRef.value.height
+    );
+
+    // Draw background gradient
+    const gradient = this.ctx.createRadialGradient(
+      this.canvasRef.value.width / 2,
+      this.canvasRef.value.height / 2,
+      0,
+      this.canvasRef.value.width / 2,
+      this.canvasRef.value.height / 2,
+      Math.max(this.canvasRef.value.width, this.canvasRef.value.height) / 2
+    );
+    gradient.addColorStop(0, "rgba(26, 26, 46, 0.8)");
+    gradient.addColorStop(1, "rgba(15, 15, 35, 0.9)");
+
+    this.ctx.fillStyle = gradient;
+    this.ctx.fillRect(
+      0,
+      0,
+      this.canvasRef.value.width,
+      this.canvasRef.value.height
+    );
+
+    // Draw audio visualizations only when recording
+    if (this.isRecording) {
+      this.drawCircularVisualizer(outputData, "output");
+      this.drawCircularVisualizer(inputData, "input");
+    }
+
+    this.animationId = requestAnimationFrame(() => this._animate());
+  }
+
+  private drawCircularVisualizer(data: Uint8Array, type: "input" | "output") {
+    if (!this.canvasRef.value) return;
+
+    const centerX = this.canvasRef.value.width / 2;
+    const centerY = this.canvasRef.value.height / 2;
+    const baseRadius = type === "output" ? 180 : 140;
+    const barCount = 64;
+
+    this.ctx.save();
+    this.ctx.translate(centerX, centerY);
+
+    for (let i = 0; i < barCount; i++) {
+      const angle = (i / barCount) * Math.PI * 2;
+      const barHeight = (data[i] / 255) * 80;
+
+      // Enhanced colors and effects
+      const intensity = data[i] / 255;
+      let color;
+
+      if (type === "output") {
+        color = `hsla(${220 + intensity * 40}, 80%, ${60 + intensity * 20}%, ${
+          0.8 + intensity * 0.2
+        })`;
+      } else {
+        color = `hsla(${320 + intensity * 40}, 70%, ${50 + intensity * 30}%, ${
+          0.6 + intensity * 0.4
+        })`;
+      }
+
+      this.ctx.strokeStyle = color;
+      this.ctx.lineWidth = type === "output" ? 4 : 3;
+      this.ctx.lineCap = "round";
+
+      // Add glow effect
+      this.ctx.shadowColor = color;
+      this.ctx.shadowBlur = 8;
+
+      const startX = Math.cos(angle) * baseRadius;
+      const startY = Math.sin(angle) * baseRadius;
+      const endX = Math.cos(angle) * (baseRadius + barHeight);
+      const endY = Math.sin(angle) * (baseRadius + barHeight);
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(startX, startY);
+      this.ctx.lineTo(endX, endY);
+      this.ctx.stroke();
+    }
+
+    // Reset shadow
+    this.ctx.shadowBlur = 0;
+
+    // Draw center circle with glow
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, baseRadius - 15, 0, Math.PI * 2);
+    this.ctx.strokeStyle =
+      type === "output"
+        ? "rgba(74, 144, 226, 0.4)"
+        : "rgba(255, 107, 129, 0.4)";
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+
+    this.ctx.restore();
+  }
+
   private async initClient() {
     if (!this.apiKey) {
-      console.error("API key is required");
+      this.updateError("API key is required");
       return;
     }
 
@@ -172,13 +515,16 @@ export class GLChatGeminiLive extends LitElement {
 
     this.outputNode.connect(this.outputAudioContext.destination);
 
+    // Initialize audio analysers
+    this.inputAnalyser = new SimpleAnalyser(this.inputNode);
+    this.outputAnalyser = new SimpleAnalyser(this.outputNode);
+
     this.initSession();
   }
 
   private async initSession() {
     const model = "gemini-2.5-flash-preview-native-audio-dialog";
 
-    // Simple function definitions
     const get_weather_vegas = {
       name: "get_weather_vegas",
       behavior: Behavior.NON_BLOCKING,
@@ -191,7 +537,7 @@ export class GLChatGeminiLive extends LitElement {
         model: model,
         callbacks: {
           onopen: () => {
-            this.updateStatus("Opened");
+            this.updateStatus("Connected to Gemini Live");
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.outputTranscription?.text) {
@@ -243,23 +589,21 @@ export class GLChatGeminiLive extends LitElement {
               const functionResponses: any[] = [];
               for (const fc of message.toolCall.functionCalls) {
                 const response = {
-                  result: { weather: "Sunny, 42 degres" },
+                  result: { weather: "Sunny, 42 degrees" },
                   scheduling: undefined,
-                }; // hard-coded function response
+                };
                 if (fc.name === "get_weather_vegas") {
                   await new Promise((r) =>
                     setTimeout(r, TOOL_RESPONSE_DELAY_MS)
                   );
                   response.scheduling =
                     FunctionResponseScheduling.INTERRUPT as any;
-                  // response.scheduling = FunctionResponseScheduling.WHEN_IDLE;
-                  // response.scheduling = FunctionResponseScheduling.SILENT;
                 }
                 functionResponses.push({
                   id: fc.id,
                   name: fc.name,
                   response,
-                } as any as never);
+                } as any);
               }
               this.session?.sendToolResponse({
                 functionResponses: functionResponses,
@@ -271,11 +615,11 @@ export class GLChatGeminiLive extends LitElement {
             }
           },
           onerror: (e: ErrorEvent) => {
-            this.updateError(e.message);
+            this.updateError(`Connection error: ${e.message}`);
             this.modelTranscript = "";
           },
           onclose: (e: CloseEvent) => {
-            this.updateStatus("Close:" + e.reason);
+            this.updateStatus(`Disconnected: ${e.reason}`);
             this.modelTranscript = "";
           },
         },
@@ -284,13 +628,13 @@ export class GLChatGeminiLive extends LitElement {
           outputAudioTranscription: {},
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Orus" } },
-            // languageCode: 'en-GB'
           },
           tools,
         },
       });
     } catch (e) {
       console.error(e);
+      this.updateError("Failed to connect to Gemini Live");
     }
   }
 
@@ -300,20 +644,19 @@ export class GLChatGeminiLive extends LitElement {
 
   private updateStatus(msg: string) {
     this.status = msg;
+    this.error = "";
   }
 
   private updateError(msg: string) {
     this.error = msg;
+    this.status = "";
   }
 
   private async startRecording() {
-    if (this.isRecording) {
-      return;
-    }
+    if (this.isRecording) return;
 
     this.inputAudioContext.resume();
-
-    this.updateStatus("Requesting microphone access...");
+    this.updateStatus("Requesting camera and microphone access...");
 
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -321,7 +664,7 @@ export class GLChatGeminiLive extends LitElement {
         video: true,
       });
 
-      this.updateStatus("Microphone access granted. Starting capture...");
+      this.updateStatus("🔴 Recording in progress");
 
       // Connect video stream to video element
       if (this.videoElementRef.value) {
@@ -377,25 +720,21 @@ export class GLChatGeminiLive extends LitElement {
       }, VIDEO_FRAME_INTERVAL_MS);
 
       this.isRecording = true;
-      this.updateStatus(
-        "🔴 Recording... Capturing audio chunks and video frames."
-      );
     } catch (err) {
       console.error("Error starting recording:", err);
-      this.updateStatus(`Error: ${(err as any).message}`);
+      this.updateError(`Access denied: ${(err as any).message}`);
       this.stopRecording();
     }
   }
 
   private stopRecording() {
-    if (!this.isRecording && !this.mediaStream && !this.inputAudioContext)
-      return;
+    if (!this.isRecording && !this.mediaStream) return;
 
     this.updateStatus("Stopping recording...");
-
     this.isRecording = false;
+    this.modelTranscript = "";
 
-    if (this.scriptProcessorNode && this.sourceNode && this.inputAudioContext) {
+    if (this.scriptProcessorNode && this.sourceNode) {
       this.scriptProcessorNode.disconnect();
       this.sourceNode.disconnect();
     }
@@ -417,68 +756,88 @@ export class GLChatGeminiLive extends LitElement {
       this.mediaStream = null;
     }
 
-    this.updateStatus("Recording stopped. Click Start to begin again.");
+    this.updateStatus("Ready to start");
   }
 
   protected firstUpdated() {
     this.initClient();
+    setTimeout(() => {
+      this.initVisualization();
+    }, 100);
+
+    // Handle window resize
+    const resizeObserver = new ResizeObserver(() => this.resize());
+    resizeObserver.observe(this);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.stopRecording();
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
   }
 
   render() {
     return html`
-      <div>
-        <video ${ref(this.videoElementRef)} playsinline autoplay muted></video>
-        <div style="display: none">${this.status}</div>
-        <div id="captions">${this.modelTranscript}</div>
+      <canvas ${ref(this.canvasRef)}></canvas>
+
+      <video
+        ${ref(this.videoElementRef)}
+        playsinline
+        autoplay
+        muted
+        class=${this.isRecording ? "recording" : ""}
+      ></video>
+
+      <div class="overlay">
+        ${this.status || this.error
+          ? html`
+              <div class="status-bar ${this.error ? "error" : ""}">
+                ${this.error || this.status}
+              </div>
+            `
+          : ""}
+        ${this.modelTranscript.trim().length > 0
+          ? html` <div class="captions">${this.modelTranscript}</div> `
+          : ""}
+
+        <div class="audio-indicator ${this.isRecording ? "active" : ""}">
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+        </div>
+
         <div class="controls">
           <button
-            id="startButton"
+            class="control-btn start-btn"
             @click=${this.startRecording}
             ?disabled=${this.isRecording}
+            title="Start Recording"
           >
-            <svg
-              viewBox="0 0 100 100"
-              width="32px"
-              height="32px"
-              fill="#c80000"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="50" cy="50" r="50" />
+            <svg class="control-icon" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="35" fill="white" />
             </svg>
           </button>
+
           <button
-            id="stopButton"
+            class="control-btn stop-btn"
             @click=${this.stopRecording}
             ?disabled=${!this.isRecording}
+            title="Stop Recording"
           >
-            <svg
-              viewBox="0 0 100 100"
-              width="32px"
-              height="32px"
-              fill="#000000"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect x="0" y="0" width="100" height="100" rx="15" />
+            <svg class="control-icon" viewBox="0 0 100 100">
+              <rect x="25" y="25" width="50" height="50" rx="8" fill="white" />
             </svg>
           </button>
         </div>
-
-        <div id="status">${this.error}</div>
-        <gl-chat-gemini-live-audio-visual
-          .inputNode=${this.inputNode}
-          .outputNode=${this.outputNode}
-        ></gl-chat-gemini-live-audio-visual>
       </div>
     `;
   }
 }
 
-// Type declaration to make TypeScript happy with the custom element
 declare global {
   interface HTMLElementTagNameMap {
     "gl-chat-gemini-live": GLChatGeminiLive;
