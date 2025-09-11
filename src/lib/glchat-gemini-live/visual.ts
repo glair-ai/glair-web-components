@@ -115,7 +115,7 @@ export class SimpleLiveAudioVisuals extends LitElement {
 
   private drawCircularVisualizer(data: Uint8Array, type: "input" | "output") {
     const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
+    const centerY = this.canvas.height / 2 + 96;
     const baseRadius = type === "output" ? 120 : 80;
     const barCount = 64;
 

@@ -134,9 +134,9 @@ export class GLChatGeminiLive extends LitElement {
 
     video {
       position: absolute;
-      left: calc(50% - 125px);
-      width: 250px;
-      height: 250px;
+      left: calc(50% - 160px);
+      width: 320px;
+      height: 320px;
       object-fit: cover;
       z-index: 10;
     }
