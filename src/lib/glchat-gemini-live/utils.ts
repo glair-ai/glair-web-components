@@ -81,4 +81,38 @@ async function createImageBlob(
   };
 }
 
-export { createBlob, createImageBlob, decode, decodeAudioData, encode };
+function downSampleRate(
+  input: Float32Array,
+  inputSampleRate: number,
+  targetSampleRate: number
+): Float32Array {
+  if (targetSampleRate === inputSampleRate) {
+    return input;
+  }
+  if (targetSampleRate > inputSampleRate) {
+    throw new Error("Target sample rate must be lower than input sample rate");
+  }
+
+  const ratio = inputSampleRate / targetSampleRate;
+  const newLength = Math.round(input.length / ratio);
+  const result = new Float32Array(newLength);
+
+  let offsetResult = 0;
+  let offsetInput = 0;
+  while (offsetResult < result.length) {
+    // simple approach: pick one sample (could also average over the window for better quality)
+    result[offsetResult] = input[Math.floor(offsetInput)];
+    offsetResult++;
+    offsetInput += ratio;
+  }
+  return result;
+}
+
+export {
+  createBlob,
+  createImageBlob,
+  decode,
+  decodeAudioData,
+  downSampleRate,
+  encode,
+};

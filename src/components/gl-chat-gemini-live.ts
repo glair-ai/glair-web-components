@@ -15,6 +15,7 @@ import {
   createImageBlob,
   decode,
   decodeAudioData,
+  downSampleRate,
 } from "../lib/glchat-gemini-live/utils";
 
 const VIDEO_FRAME_INTERVAL_MS = 1000;
@@ -66,7 +67,7 @@ export class GLChatGeminiLive extends LitElement {
   private outputAnalyser?: AudioAnalyser;
 
   private inputAudioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)({ sampleRate: 16000 });
+    (window as any).webkitAudioContext)({ sampleRate: 48000 });
   private outputAudioContext = new (window.AudioContext ||
     (window as any).webkitAudioContext)({ sampleRate: 24000 });
 
@@ -698,7 +699,10 @@ export class GLChatGeminiLive extends LitElement {
         const inputBuffer = audioProcessingEvent.inputBuffer;
         const pcmData = inputBuffer.getChannelData(0);
 
-        this.session?.sendRealtimeInput({ media: createBlob(pcmData) });
+        // resample 48k -> 16k
+        const pcm16k = downSampleRate(pcmData, inputBuffer.sampleRate, 16000);
+
+        this.session?.sendRealtimeInput({ media: createBlob(pcm16k) });
       };
 
       this.sourceNode?.connect(this.scriptProcessorNode);
