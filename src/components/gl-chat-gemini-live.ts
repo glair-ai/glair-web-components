@@ -87,6 +87,9 @@ export class GLChatGeminiLive extends LitElement {
   private invalidAPIkey: boolean = false;
 
   @state()
+  private connectedToGeminilive: boolean = false;
+
+  @state()
   private inputNode: GainNode = this.inputAudioContext.createGain();
 
   @state()
@@ -545,6 +548,7 @@ export class GLChatGeminiLive extends LitElement {
         callbacks: {
           onopen: () => {
             this.updateStatus("Connected to Gemini Live");
+            this.connectedToGeminilive = true;
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.outputTranscription?.text) {
@@ -827,7 +831,9 @@ export class GLChatGeminiLive extends LitElement {
           <button
             class="control-btn start-btn"
             @click=${this.startRecording}
-            ?disabled=${this.invalidAPIkey || this.isRecording}
+            ?disabled=${!this.connectedToGeminilive ||
+            this.invalidAPIkey ||
+            this.isRecording}
             title="Start Recording"
           >
             <svg class="control-icon" viewBox="0 0 100 100">
@@ -838,7 +844,9 @@ export class GLChatGeminiLive extends LitElement {
           <button
             class="control-btn stop-btn"
             @click=${this.stopRecording}
-            ?disabled=${this.invalidAPIkey || !this.isRecording}
+            ?disabled=${!this.connectedToGeminilive ||
+            this.invalidAPIkey ||
+            !this.isRecording}
             title="Stop Recording"
           >
             <svg class="control-icon" viewBox="0 0 100 100">
