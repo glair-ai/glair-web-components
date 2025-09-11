@@ -201,6 +201,8 @@ export class GLChatGeminiLive extends LitElement {
       white-space: pre-wrap;
       opacity: 0;
       animation: fadeIn 0.3s ease forwards;
+      display: flex;
+      flex-direction: column-reverse;
     }
 
     .captions:empty {
