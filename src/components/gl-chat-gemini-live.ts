@@ -8,6 +8,8 @@ import {
 } from "@google/genai";
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { createRef, ref, Ref } from "lit/directives/ref.js";
+
 import {
   createBlob,
   createImageBlob,
@@ -23,6 +25,8 @@ const TOOL_RESPONSE_DELAY_MS = 10000;
 export class GLChatGeminiLive extends LitElement {
   @property({ type: String })
   apiKey: string = "";
+
+  videoElementRef: Ref<HTMLVideoElement> = createRef();
 
   private client: GoogleGenAI | undefined;
   private session: Session | undefined;
@@ -71,7 +75,7 @@ export class GLChatGeminiLive extends LitElement {
       bottom: 50%;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 5;
+      z-index: 10;
       text-align: center;
       max-height: 2em; /* show only 2 lines */
       overflow: hidden;
@@ -126,6 +130,22 @@ export class GLChatGeminiLive extends LitElement {
       button[disabled] {
         display: none;
       }
+    }
+
+    video {
+      position: absolute;
+      left: calc(50% - 125px);
+      width: 250px;
+      height: 250px;
+      object-fit: cover;
+      z-index: 10;
+    }
+
+    gl-chat-gemini-live-audio-visual {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 5;
     }
   `;
 
@@ -303,6 +323,13 @@ export class GLChatGeminiLive extends LitElement {
 
       this.updateStatus("Microphone access granted. Starting capture...");
 
+      // Connect video stream to video element
+      if (this.videoElementRef.value) {
+        this.videoElementRef.value.srcObject = this.mediaStream;
+        this.videoElementRef.value.muted = true;
+        await this.videoElementRef.value.play();
+      }
+
       this.sourceNode = this.inputAudioContext.createMediaStreamSource(
         this.mediaStream
       ) as any;
@@ -327,19 +354,14 @@ export class GLChatGeminiLive extends LitElement {
       this.sourceNode?.connect(this.scriptProcessorNode);
       this.scriptProcessorNode.connect(this.inputAudioContext.destination);
 
-      const videoElement = document.createElement("video");
-      videoElement.srcObject = this.mediaStream;
-      videoElement.muted = true;
-      videoElement.play();
-
       this.frameInterval = window.setInterval(() => {
-        if (!this.isRecording) return;
+        if (!this.isRecording || !this.videoElementRef.value) return;
 
         const canvas = document.createElement("canvas");
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
+        canvas.width = this.videoElementRef.value.videoWidth;
+        canvas.height = this.videoElementRef.value.videoHeight;
         const ctx = canvas.getContext("2d");
-        ctx?.drawImage(videoElement, 0, 0);
+        ctx?.drawImage(this.videoElementRef.value, 0, 0);
 
         canvas.toBlob(
           async (blob) => {
@@ -386,6 +408,10 @@ export class GLChatGeminiLive extends LitElement {
       this.frameInterval = null;
     }
 
+    if (this.videoElementRef.value) {
+      this.videoElementRef.value.srcObject = null;
+    }
+
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach((track) => track.stop());
       this.mediaStream = null;
@@ -406,6 +432,7 @@ export class GLChatGeminiLive extends LitElement {
   render() {
     return html`
       <div>
+        <video ${ref(this.videoElementRef)} playsinline autoplay muted></video>
         <div style="display: none">${this.status}</div>
         <div id="captions">${this.modelTranscript}</div>
         <div class="controls">
