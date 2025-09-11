@@ -67,9 +67,9 @@ export class GLChatGeminiLive extends LitElement {
   private outputAnalyser?: AudioAnalyser;
 
   private inputAudioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)({ sampleRate: 48000 });
+    (window as any).webkitAudioContext)();
   private outputAudioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    (window as any).webkitAudioContext)();
 
   @state()
   private isRecording: boolean = false;
@@ -705,8 +705,11 @@ export class GLChatGeminiLive extends LitElement {
         const inputBuffer = audioProcessingEvent.inputBuffer;
         const pcmData = inputBuffer.getChannelData(0);
 
-        // resample 48k -> 16k
-        const pcm16k = downSampleRate(pcmData, inputBuffer.sampleRate, 16000);
+        const pcm16k = downSampleRate(
+          pcmData,
+          this.inputAudioContext.sampleRate,
+          16000
+        );
 
         this.session?.sendRealtimeInput({ media: createBlob(pcm16k) });
       };

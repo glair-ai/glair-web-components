@@ -100,8 +100,16 @@ function downSampleRate(
   let offsetResult = 0;
   let offsetInput = 0;
   while (offsetResult < result.length) {
-    // simple approach: pick one sample (could also average over the window for better quality)
-    result[offsetResult] = input[Math.floor(offsetInput)];
+    // Averaging samples within each window for better audio quality
+    const start = Math.floor(offsetInput);
+    const end = Math.floor(offsetInput + ratio);
+    let sum = 0;
+    let count = 0;
+    for (let i = start; i < end && i < input.length; i++) {
+      sum += input[i];
+      count++;
+    }
+    result[offsetResult] = count > 0 ? sum / count : 0;
     offsetResult++;
     offsetInput += ratio;
   }
