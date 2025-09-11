@@ -171,6 +171,7 @@ export class GLChatGeminiLive extends LitElement {
       font-weight: 500;
       border: 1px solid rgba(255, 255, 255, 0.1);
       transition: all 0.3s ease;
+      text-align: center;
     }
 
     .status-bar.error {
@@ -670,7 +671,7 @@ export class GLChatGeminiLive extends LitElement {
         video: true,
       });
 
-      this.updateStatus("🔴 Recording in progress");
+      this.updateStatus("Recording in progress");
 
       // Connect video stream to video element
       if (this.videoElementRef.value) {
