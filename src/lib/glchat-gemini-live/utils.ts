@@ -81,4 +81,46 @@ async function createImageBlob(
   };
 }
 
-export { createBlob, createImageBlob, decode, decodeAudioData, encode };
+function downSampleRate(
+  input: Float32Array,
+  inputSampleRate: number,
+  targetSampleRate: number
+): Float32Array {
+  if (targetSampleRate === inputSampleRate) {
+    return input;
+  }
+  if (targetSampleRate > inputSampleRate) {
+    throw new Error("Target sample rate must be lower than input sample rate");
+  }
+
+  const ratio = inputSampleRate / targetSampleRate;
+  const newLength = Math.round(input.length / ratio);
+  const result = new Float32Array(newLength);
+
+  let offsetResult = 0;
+  let offsetInput = 0;
+  while (offsetResult < result.length) {
+    // Averaging samples within each window for better audio quality
+    const start = Math.floor(offsetInput);
+    const end = Math.floor(offsetInput + ratio);
+    let sum = 0;
+    let count = 0;
+    for (let i = start; i < end && i < input.length; i++) {
+      sum += input[i];
+      count++;
+    }
+    result[offsetResult] = count > 0 ? sum / count : 0;
+    offsetResult++;
+    offsetInput += ratio;
+  }
+  return result;
+}
+
+export {
+  createBlob,
+  createImageBlob,
+  decode,
+  decodeAudioData,
+  downSampleRate,
+  encode,
+};

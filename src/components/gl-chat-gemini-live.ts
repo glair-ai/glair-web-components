@@ -15,6 +15,7 @@ import {
   createImageBlob,
   decode,
   decodeAudioData,
+  downSampleRate,
 } from "../lib/glchat-gemini-live/utils";
 
 const VIDEO_FRAME_INTERVAL_MS = 1000;
@@ -66,9 +67,9 @@ export class GLChatGeminiLive extends LitElement {
   private outputAnalyser?: AudioAnalyser;
 
   private inputAudioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)({ sampleRate: 16000 });
+    (window as any).webkitAudioContext)();
   private outputAudioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    (window as any).webkitAudioContext)();
 
   @state()
   private isRecording: boolean = false;
@@ -84,6 +85,9 @@ export class GLChatGeminiLive extends LitElement {
 
   @state()
   private invalidAPIkey: boolean = false;
+
+  @state()
+  private connectedToGeminilive: boolean = false;
 
   @state()
   private inputNode: GainNode = this.inputAudioContext.createGain();
@@ -200,6 +204,8 @@ export class GLChatGeminiLive extends LitElement {
       white-space: pre-wrap;
       opacity: 0;
       animation: fadeIn 0.3s ease forwards;
+      display: flex;
+      flex-direction: column-reverse;
     }
 
     .captions:empty {
@@ -542,6 +548,7 @@ export class GLChatGeminiLive extends LitElement {
         callbacks: {
           onopen: () => {
             this.updateStatus("Connected to Gemini Live");
+            this.connectedToGeminilive = true;
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.outputTranscription?.text) {
@@ -698,7 +705,13 @@ export class GLChatGeminiLive extends LitElement {
         const inputBuffer = audioProcessingEvent.inputBuffer;
         const pcmData = inputBuffer.getChannelData(0);
 
-        this.session?.sendRealtimeInput({ media: createBlob(pcmData) });
+        const pcm16k = downSampleRate(
+          pcmData,
+          this.inputAudioContext.sampleRate,
+          16000
+        );
+
+        this.session?.sendRealtimeInput({ media: createBlob(pcm16k) });
       };
 
       this.sourceNode?.connect(this.scriptProcessorNode);
@@ -821,7 +834,9 @@ export class GLChatGeminiLive extends LitElement {
           <button
             class="control-btn start-btn"
             @click=${this.startRecording}
-            ?disabled=${this.invalidAPIkey || this.isRecording}
+            ?disabled=${!this.connectedToGeminilive ||
+            this.invalidAPIkey ||
+            this.isRecording}
             title="Start Recording"
           >
             <svg class="control-icon" viewBox="0 0 100 100">
@@ -832,7 +847,9 @@ export class GLChatGeminiLive extends LitElement {
           <button
             class="control-btn stop-btn"
             @click=${this.stopRecording}
-            ?disabled=${this.invalidAPIkey || !this.isRecording}
+            ?disabled=${!this.connectedToGeminilive ||
+            this.invalidAPIkey ||
+            !this.isRecording}
             title="Stop Recording"
           >
             <svg class="control-icon" viewBox="0 0 100 100">
