@@ -1,5 +1,6 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { styleMap } from "lit/directives/style-map.js";
 
 @customElement("gl-chat-widget")
 export class GLChatWidget extends LitElement {
@@ -10,26 +11,17 @@ export class GLChatWidget extends LitElement {
   @property({ type: String })
   position: "left" | "right" = "right";
 
+  @property({ type: String })
+  colorTheme: string = "#00709F";
+
   // Internal state
   @state()
   private widgetMode: "hidden" | "widget" | "fullScreen" = "hidden";
 
-  // SVG icons
-  private toggleButtonExpandedIcon = html`<svg
-    width="32"
-    height="32"
-    viewBox="0 0 32 32"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M8 12L16 20L24 12"
-      stroke="#00709F"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-  </svg>`;
+  @state()
+  private isContracting = false;
+
+  // Static icons
   private toggleButtonMinimizedIcon = html`<svg
     width="32"
     height="32"
@@ -100,6 +92,8 @@ export class GLChatWidget extends LitElement {
       </linearGradient>
     </defs>
   </svg>`;
+
+  // Fixed fullscreen expand icon
   private fullScreenButtonIcon = html`<svg
     width="20"
     height="20"
@@ -108,12 +102,15 @@ export class GLChatWidget extends LitElement {
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      d="M9.16699 15.8332H4.16699M4.16699 15.8332V10.8332M4.16699 15.8332L15.8337 4.1665M10.8337 4.1665H15.8337M15.8337 4.1665V9.1665"
+      d="M2.5 7.5L2.5 2.5L7.5 2.5M17.5 12.5L17.5 17.5L12.5 17.5M2.5 2.5L7.91667 7.91667M17.5 17.5L12.0833 12.0833"
       stroke="#1B1B1B"
+      stroke-width="1.5"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
   </svg>`;
+
+  // Fixed minimize icon
   private minimizeButtonIcon = html`<svg
     width="20"
     height="20"
@@ -122,8 +119,9 @@ export class GLChatWidget extends LitElement {
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      d="M9.16699 15.8332H4.16699M4.16699 15.8332V10.8332M4.16699 15.8332L15.8337 4.1665M10.8337 4.1665H15.8337M15.8337 4.1665V9.1665"
+      d="M7.5 2.5L7.5 7.5L2.5 7.5M12.5 17.5L12.5 12.5L17.5 12.5M7.5 7.5L2.08333 2.08333M12.5 12.5L17.9167 17.9167"
       stroke="#1B1B1B"
+      stroke-width="1.5"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
@@ -140,7 +138,6 @@ export class GLChatWidget extends LitElement {
       position: fixed;
       bottom: 20px;
       z-index: 9999;
-      transition: right 0.3s ease, left 0.3s ease;
     }
 
     .chat-widget-container[data-position="right"] {
@@ -151,11 +148,22 @@ export class GLChatWidget extends LitElement {
       left: 20px;
     }
 
+    /* Fullscreen container */
+    .chat-widget-container[data-fullscreen="true"] {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+    }
+
     .chat-toggle-button {
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background-color: #00709f;
       border: none;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       cursor: pointer;
@@ -165,6 +173,7 @@ export class GLChatWidget extends LitElement {
       position: absolute;
       bottom: 0;
       z-index: 10000;
+      transition: transform 0.2s ease, background-color 0.3s ease;
     }
 
     .chat-toggle-button[data-position="right"] {
@@ -185,21 +194,41 @@ export class GLChatWidget extends LitElement {
       background-color: white;
       border-radius: 10px;
       overflow: hidden;
-      display: none;
       position: relative;
-      transition: all 0.3s ease;
       box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.05),
         0px 10px 15px -3px rgba(0, 0, 0, 0.1),
         0px 4px 6px -2px rgba(0, 0, 0, 0.05);
       bottom: 70px;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
     .chat-widget[data-position="right"] {
       right: 0;
+      transform-origin: bottom right;
     }
 
     .chat-widget[data-position="left"] {
       left: 0;
+      transform-origin: bottom left;
+    }
+
+    /* Fullscreen mode */
+    .chat-widget[data-position="right"][data-mode="fullScreen"] {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+    }
+
+    .chat-widget[data-position="left"][data-mode="fullScreen"] {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
     }
 
     .chat-widget-header {
@@ -214,11 +243,21 @@ export class GLChatWidget extends LitElement {
 
     .expand-button {
       cursor: pointer;
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.2s ease;
+      background: none;
+      border: none;
+      padding: 2px;
+      border-radius: 4px;
+    }
+
+    .expand-button:hover {
+      transform: scale(1.1);
+      background-color: rgba(0, 0, 0, 0.05);
     }
 
     .chat-iframe-container {
@@ -233,28 +272,19 @@ export class GLChatWidget extends LitElement {
       border: none;
     }
 
+    /* Widget mode states */
     .chat-widget[data-mode="hidden"] {
-      display: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0);
+      pointer-events: none;
     }
 
     .chat-widget[data-mode="widget"] {
-      display: block;
-    }
-
-    .chat-widget[data-mode="fullScreen"] {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 0;
-      z-index: 9999;
-      bottom: 0;
-    }
-
-    .chat-toggle-button[data-expanded="true"] {
-      background-color: white;
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+      pointer-events: all;
     }
 
     .chat-toggle-button[data-hidden="true"] {
@@ -288,13 +318,13 @@ export class GLChatWidget extends LitElement {
   }
 
   private showWidget(): void {
+    this.isContracting = false;
     this.widgetMode = "widget";
-    this.requestUpdate();
   }
 
   private hideWidget(): void {
+    this.isContracting = false;
     this.widgetMode = "hidden";
-    this.requestUpdate();
   }
 
   private toggleFullscreen(): void {
@@ -306,30 +336,57 @@ export class GLChatWidget extends LitElement {
   }
 
   private enterFullscreen(): void {
+    this.isContracting = false;
     this.widgetMode = "fullScreen";
-    this.requestUpdate();
   }
 
   private exitFullscreen(): void {
-    this.widgetMode = "widget";
-    this.requestUpdate();
+    this.isContracting = true;
+
+    // Wait for animation to complete
+    setTimeout(() => {
+      this.isContracting = false;
+      this.widgetMode = "widget";
+    }, 300);
   }
 
   render() {
+    // Dynamic icons
+    const toggleButtonExpandedIcon = html`<svg
+      width="32"
+      height="32"
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 12L16 20L24 12"
+        stroke=${this.colorTheme}
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>`;
+
     return html`
-      <div class="chat-widget-container" data-position="${this.position}">
+      <div
+        class="chat-widget-container"
+        data-position="${this.position}"
+        data-fullscreen="${this.widgetMode === "fullScreen"}"
+      >
         <div
           class="chat-widget"
           data-mode="${this.widgetMode}"
           data-position="${this.position}"
+          data-contracting="${this.isContracting}"
         >
           <div class="chat-widget-header">
             <div></div>
-            <div class="expand-button" @click="${this.toggleFullscreen}">
+            <button class="expand-button" @click="${this.toggleFullscreen}">
               ${this.widgetMode === "fullScreen"
-                ? html`${this.minimizeButtonIcon}`
-                : html`${this.fullScreenButtonIcon}`}
-            </div>
+                ? this.minimizeButtonIcon
+                : this.fullScreenButtonIcon}
+            </button>
           </div>
           <div class="chat-iframe-container">
             <iframe
@@ -348,9 +405,13 @@ export class GLChatWidget extends LitElement {
           data-expanded="${this.widgetMode !== "hidden"}"
           data-hidden="${this.widgetMode === "fullScreen"}"
           @click="${this.toggleWidget}"
+          style=${styleMap({
+            "background-color":
+              this.widgetMode !== "hidden" ? "white" : this.colorTheme,
+          })}
         >
           ${this.widgetMode !== "hidden"
-            ? this.toggleButtonExpandedIcon
+            ? toggleButtonExpandedIcon
             : this.toggleButtonMinimizedIcon}
         </button>
       </div>
@@ -358,7 +419,6 @@ export class GLChatWidget extends LitElement {
   }
 }
 
-// Type declaration to make TypeScript happy with the custom element
 declare global {
   interface HTMLElementTagNameMap {
     "gl-chat-widget": GLChatWidget;
