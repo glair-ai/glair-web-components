@@ -576,13 +576,14 @@ export class GLChatWidget extends LitElement {
   }
 
   private exitFullscreen(): void {
-    document.documentElement.style.overflow = this.parentOverflow;
     this.isContracting = true;
 
     // Wait for animation to complete
     setTimeout(() => {
       this.isContracting = false;
       this.widgetMode = this.isMobile ? "hidden" : "widget";
+                document.documentElement.style.overflow = this.parentOverflow;
+
     }, 300);
   }
 
