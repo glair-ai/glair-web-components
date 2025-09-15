@@ -24,7 +24,10 @@ export class GLChatWidget extends LitElement {
   @state()
   private isMobile = false;
 
-  // Static icons (keeping your existing icons)
+  @state()
+  private viewportHeight = window.innerHeight;
+
+  // Static icons (keeping your existing icons unchanged)
   private toggleButtonMinimizedIcon = html`<svg
     width="32"
     height="32"
@@ -139,22 +142,25 @@ export class GLChatWidget extends LitElement {
       --widget-desktop-width: 375px;
       --widget-desktop-height: 640px;
       --widget-mobile-width: calc(100vw - 20px);
-      --widget-mobile-height: calc(100vh - 100px);
+      --widget-mobile-height: calc(100vh - 140px);
       --widget-mobile-max-height: 600px;
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-area-left: env(safe-area-inset-left, 0px);
+      --safe-area-right: env(safe-area-inset-right, 0px);
     }
 
     .chat-widget-container {
       position: fixed;
-      bottom: 20px;
+      bottom: calc(20px + var(--safe-area-bottom));
       z-index: 9999;
     }
 
     .chat-widget-container[data-position="right"] {
-      right: 10px;
+      right: calc(10px + var(--safe-area-right));
     }
 
     .chat-widget-container[data-position="left"] {
-      left: 10px;
+      left: calc(10px + var(--safe-area-left));
     }
 
     /* Fullscreen container */
@@ -299,22 +305,22 @@ export class GLChatWidget extends LitElement {
     /* Mobile Responsive Styles */
     @media (max-width: 768px) {
       .chat-widget-container {
-        bottom: 10px;
+        bottom: calc(15px + var(--safe-area-bottom));
       }
 
       .chat-widget-container[data-position="right"] {
-        right: 5px;
+        right: calc(10px + var(--safe-area-right));
       }
 
       .chat-widget-container[data-position="left"] {
-        left: 5px;
+        left: calc(10px + var(--safe-area-left));
       }
 
       .chat-widget {
         width: var(--widget-mobile-width);
         height: var(--widget-mobile-height);
-        max-width: calc(100vw - 10px);
-        max-height: var(--widget-mobile-max-height);
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 160px);
         bottom: 70px;
       }
 
@@ -339,24 +345,24 @@ export class GLChatWidget extends LitElement {
       }
     }
 
-    /* Extra small mobile devices */
+    /* Extra small mobile devices with navigation bars */
     @media (max-width: 480px) {
       .chat-widget-container {
-        bottom: 5px;
+        bottom: calc(10px + var(--safe-area-bottom));
       }
 
       .chat-widget-container[data-position="right"] {
-        right: 5px;
+        right: calc(8px + var(--safe-area-right));
       }
 
       .chat-widget-container[data-position="left"] {
-        left: 5px;
+        left: calc(8px + var(--safe-area-left));
       }
 
       .chat-widget {
-        width: calc(100vw - 10px);
-        height: calc(100vh - 80px);
-        max-height: 500px;
+        width: calc(100vw - 16px);
+        height: calc(100vh - 180px);
+        max-height: calc(100vh - 120px);
         border-radius: 8px;
       }
 
@@ -394,25 +400,47 @@ export class GLChatWidget extends LitElement {
     /* Landscape orientation on mobile */
     @media (max-height: 600px) and (orientation: landscape) {
       .chat-widget {
-        height: calc(100vh - 60px);
-        max-height: none;
+        height: calc(100vh - 80px);
+        max-height: calc(100vh - 60px);
       }
     }
 
-    /* Safe area for devices with notches */
-    @supports (padding: max(0px)) {
+    /* Android devices with navigation bars */
+    @media (max-width: 768px) and (min-height: 500px) {
+      .chat-widget-container {
+        bottom: calc(20px + var(--safe-area-bottom, 48px));
+      }
+
+      .chat-widget {
+        max-height: calc(100vh - 200px);
+      }
+    }
+
+    /* iOS devices with home indicator */
+    @supports (-webkit-touch-callout: none) {
       @media (max-width: 768px) {
         .chat-widget-container {
-          bottom: max(10px, env(safe-area-inset-bottom));
+          bottom: calc(15px + var(--safe-area-bottom, 34px));
         }
+      }
+    }
 
-        .chat-widget-container[data-position="right"] {
-          right: max(5px, env(safe-area-inset-right));
-        }
+    /* Devices with navigation gestures */
+    @media (max-width: 768px) and (display-mode: standalone) {
+      .chat-widget-container {
+        bottom: calc(25px + var(--safe-area-bottom));
+      }
+    }
 
-        .chat-widget-container[data-position="left"] {
-          left: max(5px, env(safe-area-inset-left));
-        }
+    /* Very short screens (like when keyboard is open) */
+    @media (max-height: 400px) {
+      .chat-widget {
+        height: calc(100vh - 100px);
+        max-height: calc(100vh - 80px);
+      }
+
+      .chat-widget-container {
+        bottom: calc(8px + var(--safe-area-bottom));
       }
     }
   `;
@@ -420,8 +448,17 @@ export class GLChatWidget extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this.checkIsMobile();
+    this.updateViewportHeight();
     window.addEventListener("resize", this.handleResize);
     window.addEventListener("orientationchange", this.handleOrientationChange);
+
+    // Listen for visual viewport changes (keyboard, navigation bars)
+    if ("visualViewport" in window) {
+      window.visualViewport!.addEventListener(
+        "resize",
+        this.handleVisualViewportChange
+      );
+    }
   }
 
   disconnectedCallback(): void {
@@ -431,26 +468,45 @@ export class GLChatWidget extends LitElement {
       "orientationchange",
       this.handleOrientationChange
     );
+
+    if ("visualViewport" in window) {
+      window.visualViewport!.removeEventListener(
+        "resize",
+        this.handleVisualViewportChange
+      );
+    }
   }
 
   private handleResize = (): void => {
     this.checkIsMobile();
+    this.updateViewportHeight();
   };
 
   private handleOrientationChange = (): void => {
     setTimeout(() => {
       this.checkIsMobile();
+      this.updateViewportHeight();
     }, 100);
   };
 
+  private handleVisualViewportChange = (): void => {
+    this.updateViewportHeight();
+  };
+
+  private updateViewportHeight(): void {
+    // Use visual viewport height if available (accounts for virtual keyboard and nav bars)
+    if ("visualViewport" in window) {
+      this.viewportHeight = window.visualViewport!.height;
+    } else {
+      this.viewportHeight = (window as any).innerHeight;
+    }
+
+    // Update CSS custom property for dynamic viewport height usage
+    this.style.setProperty("--actual-vh", `${this.viewportHeight}px`);
+  }
+
   private checkIsMobile(): void {
     this.isMobile = window.innerWidth <= 768;
-
-    // Auto-enter fullscreen on mobile when widget is opened
-    if (this.isMobile && this.widgetMode === "widget") {
-      // Optional: Uncomment the line below to auto-fullscreen on mobile
-      // this.enterFullscreen();
-    }
   }
 
   // Lifecycle methods
