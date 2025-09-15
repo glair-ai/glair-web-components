@@ -582,8 +582,7 @@ export class GLChatWidget extends LitElement {
     setTimeout(() => {
       this.isContracting = false;
       this.widgetMode = this.isMobile ? "hidden" : "widget";
-                document.documentElement.style.overflow = this.parentOverflow;
-
+      document.documentElement.style.overflow = this.parentOverflow;
     }, 300);
   }
 
