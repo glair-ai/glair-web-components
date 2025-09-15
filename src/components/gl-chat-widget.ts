@@ -227,13 +227,19 @@ export class GLChatWidget extends LitElement {
       transform-origin: bottom left;
     }
 
+    .chat-widget[data-position="left"][data-mode="fullScreen"] {
+      left: 0 !important;
+      bottom: 0 !important;
+    }
+
+    .chat-widget[data-position="right"][data-mode="fullScreen"] {
+      right: 0 !important;
+      bottom: 0 !important;
+    }
+
     /* Fullscreen mode */
     .chat-widget[data-mode="fullScreen"] {
       position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
       width: 100dvw !important;
       height: 100dvh !important;
       border-radius: 0 !important;
