@@ -158,6 +158,18 @@ export class GLChatWidget extends LitElement {
       z-index: 9999;
     }
 
+    .chat-widget-container[data-mode="hidden"] {
+      pointer-events: none;
+    }
+
+    .chat-widget-container[data-mode="widget"] {
+      pointer-events: all;
+    }
+
+    .chat-widget-container[data-mode="fullScreen"] {
+      pointer-events: all;
+    }
+
     .chat-widget-container[data-position="right"] {
       right: calc(10px + var(--safe-area-right));
     }
@@ -189,17 +201,17 @@ export class GLChatWidget extends LitElement {
       align-items: center;
       justify-content: center;
       position: absolute;
-      bottom: 0;
+      bottom: calc(20px + var(--safe-area-bottom));
       z-index: 10000;
       transition: transform 0.2s ease, background-color 0.3s ease;
     }
 
     .chat-toggle-button[data-position="right"] {
-      right: 0;
+      right: calc(10px + var(--safe-area-right));
     }
 
     .chat-toggle-button[data-position="left"] {
-      left: 0;
+      left: calc(10px + var(--safe-area-left));
     }
 
     .chat-toggle-button:hover {
@@ -605,37 +617,40 @@ export class GLChatWidget extends LitElement {
     </svg>`;
 
     return html`
-      <div
-        class="chat-widget-container"
-        data-position="${this.position}"
-        data-fullscreen="${this.widgetMode === "fullScreen"}"
-        data-mobile="${this.isMobile}"
-      >
+      <div>
         <div
-          class="chat-widget"
-          data-mode="${this.widgetMode}"
+          class="chat-widget-container"
           data-position="${this.position}"
-          data-contracting="${this.isContracting}"
+          data-fullscreen="${this.widgetMode === "fullScreen"}"
           data-mobile="${this.isMobile}"
+          data-mode="${this.widgetMode}"
         >
-          <div class="chat-widget-header">
-            <div></div>
-            <button class="expand-button" @click="${this.toggleFullscreen}">
-              ${this.widgetMode === "fullScreen"
-                ? this.minimizeButtonIcon
-                : this.fullScreenButtonIcon}
-            </button>
-          </div>
-          <div class="chat-iframe-container">
-            <iframe
-              class="chat-iframe"
-              src="${this.url}"
-              title="Chat Widget"
-              frameborder="0"
-              allowtransparency="true"
-              allow="clipboard-write"
-            >
-            </iframe>
+          <div
+            class="chat-widget"
+            data-mode="${this.widgetMode}"
+            data-position="${this.position}"
+            data-contracting="${this.isContracting}"
+            data-mobile="${this.isMobile}"
+          >
+            <div class="chat-widget-header">
+              <div></div>
+              <button class="expand-button" @click="${this.toggleFullscreen}">
+                ${this.widgetMode === "fullScreen"
+                  ? this.minimizeButtonIcon
+                  : this.fullScreenButtonIcon}
+              </button>
+            </div>
+            <div class="chat-iframe-container">
+              <iframe
+                class="chat-iframe"
+                src="${this.url}"
+                title="Chat Widget"
+                frameborder="0"
+                allowtransparency="true"
+                allow="clipboard-write"
+              >
+              </iframe>
+            </div>
           </div>
         </div>
         <button
