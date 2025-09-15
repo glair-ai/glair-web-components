@@ -21,7 +21,10 @@ export class GLChatWidget extends LitElement {
   @state()
   private isContracting = false;
 
-  // Static icons
+  @state()
+  private isMobile = false;
+
+  // Static icons (keeping your existing icons)
   private toggleButtonMinimizedIcon = html`<svg
     width="32"
     height="32"
@@ -93,7 +96,6 @@ export class GLChatWidget extends LitElement {
     </defs>
   </svg>`;
 
-  // Fixed fullscreen expand icon
   private fullScreenButtonIcon = html`<svg
     width="20"
     height="20"
@@ -110,7 +112,6 @@ export class GLChatWidget extends LitElement {
     />
   </svg>`;
 
-  // Fixed minimize icon
   private minimizeButtonIcon = html`<svg
     width="20"
     height="20"
@@ -134,6 +135,14 @@ export class GLChatWidget extends LitElement {
       box-sizing: border-box;
     }
 
+    :host {
+      --widget-desktop-width: 375px;
+      --widget-desktop-height: 640px;
+      --widget-mobile-width: calc(100vw - 20px);
+      --widget-mobile-height: calc(100vh - 100px);
+      --widget-mobile-max-height: 600px;
+    }
+
     .chat-widget-container {
       position: fixed;
       bottom: 20px;
@@ -141,11 +150,11 @@ export class GLChatWidget extends LitElement {
     }
 
     .chat-widget-container[data-position="right"] {
-      right: 20px;
+      right: 10px;
     }
 
     .chat-widget-container[data-position="left"] {
-      left: 20px;
+      left: 10px;
     }
 
     /* Fullscreen container */
@@ -189,8 +198,8 @@ export class GLChatWidget extends LitElement {
     }
 
     .chat-widget {
-      width: 375px;
-      height: 640px;
+      width: var(--widget-desktop-width);
+      height: var(--widget-desktop-height);
       background-color: white;
       border-radius: 10px;
       overflow: hidden;
@@ -213,22 +222,18 @@ export class GLChatWidget extends LitElement {
     }
 
     /* Fullscreen mode */
-    .chat-widget[data-position="right"][data-mode="fullScreen"] {
-      position: fixed;
-      right: 0;
-      bottom: 0;
+    .chat-widget[data-mode="fullScreen"] {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
       border-radius: 0 !important;
-    }
-
-    .chat-widget[data-position="left"][data-mode="fullScreen"] {
-      position: fixed;
-      left: 0;
-      bottom: 0;
-      width: 100vw !important;
-      height: 100vh !important;
-      border-radius: 0 !important;
+      max-width: none !important;
+      max-height: none !important;
+      transform-origin: center !important;
     }
 
     .chat-widget-header {
@@ -290,7 +295,163 @@ export class GLChatWidget extends LitElement {
     .chat-toggle-button[data-hidden="true"] {
       display: none;
     }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      .chat-widget-container {
+        bottom: 10px;
+      }
+
+      .chat-widget-container[data-position="right"] {
+        right: 5px;
+      }
+
+      .chat-widget-container[data-position="left"] {
+        left: 5px;
+      }
+
+      .chat-widget {
+        width: var(--widget-mobile-width);
+        height: var(--widget-mobile-height);
+        max-width: calc(100vw - 10px);
+        max-height: var(--widget-mobile-max-height);
+        bottom: 70px;
+      }
+
+      .chat-widget[data-position="right"] {
+        right: 0;
+        transform-origin: bottom center;
+      }
+
+      .chat-widget[data-position="left"] {
+        left: 0;
+        transform-origin: bottom center;
+      }
+
+      .chat-toggle-button {
+        width: 50px;
+        height: 50px;
+      }
+
+      .chat-toggle-button svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    /* Extra small mobile devices */
+    @media (max-width: 480px) {
+      .chat-widget-container {
+        bottom: 5px;
+      }
+
+      .chat-widget-container[data-position="right"] {
+        right: 5px;
+      }
+
+      .chat-widget-container[data-position="left"] {
+        left: 5px;
+      }
+
+      .chat-widget {
+        width: calc(100vw - 10px);
+        height: calc(100vh - 80px);
+        max-height: 500px;
+        border-radius: 8px;
+      }
+
+      .chat-widget-header {
+        height: 44px;
+        padding: 0 10px;
+      }
+
+      .chat-iframe-container {
+        height: calc(100% - 44px);
+      }
+
+      .expand-button {
+        width: 24px;
+        height: 24px;
+        padding: 4px;
+      }
+
+      .expand-button svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .chat-toggle-button {
+        width: 48px;
+        height: 48px;
+      }
+
+      .chat-toggle-button svg {
+        width: 26px;
+        height: 26px;
+      }
+    }
+
+    /* Landscape orientation on mobile */
+    @media (max-height: 600px) and (orientation: landscape) {
+      .chat-widget {
+        height: calc(100vh - 60px);
+        max-height: none;
+      }
+    }
+
+    /* Safe area for devices with notches */
+    @supports (padding: max(0px)) {
+      @media (max-width: 768px) {
+        .chat-widget-container {
+          bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        .chat-widget-container[data-position="right"] {
+          right: max(5px, env(safe-area-inset-right));
+        }
+
+        .chat-widget-container[data-position="left"] {
+          left: max(5px, env(safe-area-inset-left));
+        }
+      }
+    }
   `;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.checkIsMobile();
+    window.addEventListener("resize", this.handleResize);
+    window.addEventListener("orientationchange", this.handleOrientationChange);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener(
+      "orientationchange",
+      this.handleOrientationChange
+    );
+  }
+
+  private handleResize = (): void => {
+    this.checkIsMobile();
+  };
+
+  private handleOrientationChange = (): void => {
+    setTimeout(() => {
+      this.checkIsMobile();
+    }, 100);
+  };
+
+  private checkIsMobile(): void {
+    this.isMobile = window.innerWidth <= 768;
+
+    // Auto-enter fullscreen on mobile when widget is opened
+    if (this.isMobile && this.widgetMode === "widget") {
+      // Optional: Uncomment the line below to auto-fullscreen on mobile
+      // this.enterFullscreen();
+    }
+  }
 
   // Lifecycle methods
   protected updated(changedProperties: PropertyValues): void {
@@ -319,7 +480,13 @@ export class GLChatWidget extends LitElement {
 
   private showWidget(): void {
     this.isContracting = false;
-    this.widgetMode = "widget";
+
+    // On mobile, consider going directly to fullscreen for better UX
+    if (this.isMobile) {
+      this.widgetMode = "fullScreen";
+    } else {
+      this.widgetMode = "widget";
+    }
   }
 
   private hideWidget(): void {
@@ -346,7 +513,7 @@ export class GLChatWidget extends LitElement {
     // Wait for animation to complete
     setTimeout(() => {
       this.isContracting = false;
-      this.widgetMode = "widget";
+      this.widgetMode = this.isMobile ? "hidden" : "widget";
     }, 300);
   }
 
@@ -373,12 +540,14 @@ export class GLChatWidget extends LitElement {
         class="chat-widget-container"
         data-position="${this.position}"
         data-fullscreen="${this.widgetMode === "fullScreen"}"
+        data-mobile="${this.isMobile}"
       >
         <div
           class="chat-widget"
           data-mode="${this.widgetMode}"
           data-position="${this.position}"
           data-contracting="${this.isContracting}"
+          data-mobile="${this.isMobile}"
         >
           <div class="chat-widget-header">
             <div></div>
