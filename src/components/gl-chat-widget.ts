@@ -549,6 +549,9 @@ export class GLChatWidget extends LitElement {
     // On mobile, consider going directly to fullscreen for better UX
     if (this.isMobile) {
       this.widgetMode = "fullScreen";
+
+      this.parentOverflow = document.documentElement.style.overflow;
+      document.documentElement.style.overflow = "hidden";
     } else {
       this.widgetMode = "widget";
     }
@@ -557,6 +560,10 @@ export class GLChatWidget extends LitElement {
   private hideWidget(): void {
     this.isContracting = false;
     this.widgetMode = "hidden";
+
+    if (this.isMobile) {
+      document.documentElement.style.overflow = this.parentOverflow;
+    }
   }
 
   private toggleFullscreen(): void {
@@ -638,9 +645,11 @@ export class GLChatWidget extends LitElement {
             </iframe>
           </div>
         </div>
+
         <button
           class="chat-toggle-button"
           data-position="${this.position}"
+          data-mode="${this.widgetMode}"
           data-expanded="${this.widgetMode !== "hidden"}"
           data-hidden="${this.widgetMode === "fullScreen"}"
           @click="${this.toggleWidget}"
