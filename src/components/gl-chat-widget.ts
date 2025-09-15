@@ -230,6 +230,8 @@ export class GLChatWidget extends LitElement {
     /* Fullscreen mode */
     .chat-widget[data-mode="fullScreen"] {
       position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
       width: 100vw !important;
