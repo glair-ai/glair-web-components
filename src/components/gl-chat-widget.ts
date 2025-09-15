@@ -141,8 +141,8 @@ export class GLChatWidget extends LitElement {
     :host {
       --widget-desktop-width: 375px;
       --widget-desktop-height: 640px;
-      --widget-mobile-width: calc(100vw - 20px);
-      --widget-mobile-height: calc(100vh - 140px);
+      --widget-mobile-width: calc(100dvw - 20px);
+      --widget-mobile-height: calc(100dvh - 140px);
       --widget-mobile-max-height: 600px;
       --safe-area-bottom: env(safe-area-inset-bottom, 0px);
       --safe-area-left: env(safe-area-inset-left, 0px);
@@ -170,8 +170,8 @@ export class GLChatWidget extends LitElement {
       left: 0;
       right: 0;
       bottom: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100dvw;
+      height: 100dvh;
       z-index: 9999;
     }
 
@@ -234,8 +234,8 @@ export class GLChatWidget extends LitElement {
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
+      width: 100dvw !important;
+      height: 100dvh !important;
       border-radius: 0 !important;
       max-width: none !important;
       max-height: none !important;
@@ -319,8 +319,8 @@ export class GLChatWidget extends LitElement {
       .chat-widget {
         width: var(--widget-mobile-width);
         height: var(--widget-mobile-height);
-        max-width: calc(100vw - 20px);
-        max-height: calc(100vh - 160px);
+        max-width: calc(100dvw - 20px);
+        max-height: calc(100dvh - 160px);
         bottom: 70px;
       }
 
@@ -360,9 +360,9 @@ export class GLChatWidget extends LitElement {
       }
 
       .chat-widget {
-        width: calc(100vw - 16px);
-        height: calc(100vh - 180px);
-        max-height: calc(100vh - 120px);
+        width: calc(100dvw - 16px);
+        height: calc(100dvh - 180px);
+        max-height: calc(100dvh - 120px);
         border-radius: 8px;
       }
 
@@ -400,8 +400,8 @@ export class GLChatWidget extends LitElement {
     /* Landscape orientation on mobile */
     @media (max-height: 600px) and (orientation: landscape) {
       .chat-widget {
-        height: calc(100vh - 80px);
-        max-height: calc(100vh - 60px);
+        height: calc(100dvh - 80px);
+        max-height: calc(100dvh - 60px);
       }
     }
 
@@ -412,7 +412,7 @@ export class GLChatWidget extends LitElement {
       }
 
       .chat-widget {
-        max-height: calc(100vh - 200px);
+        max-height: calc(100dvh - 200px);
       }
     }
 
@@ -435,8 +435,8 @@ export class GLChatWidget extends LitElement {
     /* Very short screens (like when keyboard is open) */
     @media (max-height: 400px) {
       .chat-widget {
-        height: calc(100vh - 100px);
-        max-height: calc(100vh - 80px);
+        height: calc(100dvh - 100px);
+        max-height: calc(100dvh - 80px);
       }
 
       .chat-widget-container {
