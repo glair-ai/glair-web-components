@@ -560,6 +560,10 @@ export class GLChatWidget extends LitElement {
   private hideWidget(): void {
     this.isContracting = false;
     this.widgetMode = "hidden";
+
+    if (this.isMobile) {
+      document.documentElement.style.overflow = this.parentOverflow;
+    }
   }
 
   private toggleFullscreen(): void {
