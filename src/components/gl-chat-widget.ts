@@ -27,6 +27,9 @@ export class GLChatWidget extends LitElement {
   @state()
   private viewportHeight = window.innerHeight;
 
+  @state()
+  private parentOverflow: string = "";
+
   // Static icons (keeping your existing icons unchanged)
   private toggleButtonMinimizedIcon = html`<svg
     width="32"
@@ -565,11 +568,15 @@ export class GLChatWidget extends LitElement {
   }
 
   private enterFullscreen(): void {
+    this.parentOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+
     this.isContracting = false;
     this.widgetMode = "fullScreen";
   }
 
   private exitFullscreen(): void {
+    document.documentElement.style.overflow = this.parentOverflow;
     this.isContracting = true;
 
     // Wait for animation to complete
