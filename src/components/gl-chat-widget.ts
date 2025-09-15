@@ -191,6 +191,7 @@ export class GLChatWidget extends LitElement {
     }
 
     .chat-toggle-button {
+      position: fixed;
       width: 56px;
       height: 56px;
       border-radius: 50%;
@@ -200,7 +201,6 @@ export class GLChatWidget extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      position: absolute;
       bottom: calc(20px + var(--safe-area-bottom));
       z-index: 10000;
       transition: transform 0.2s ease, background-color 0.3s ease;
