@@ -654,7 +654,7 @@ export class GLChatWidget extends LitElement {
                 title="Chat Widget"
                 frameborder="0"
                 allowtransparency="true"
-                allow="clipboard-write"
+                allow="clipboard-write; microphone; camera"
               >
               </iframe>
             </div>

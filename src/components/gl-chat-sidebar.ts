@@ -317,6 +317,7 @@ export class GLChatSidebar extends LitElement {
               title="Sidebar Content"
               frameborder="0"
               allowtransparency="true"
+              allow="clipboard-write; microphone; camera"
             >
             </iframe>
           </div>
