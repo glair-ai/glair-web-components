@@ -156,6 +156,12 @@ export class GLChatWidget extends LitElement {
       position: fixed;
       bottom: calc(20px + var(--safe-area-bottom));
       z-index: 9999;
+
+      pointer-events: none;
+    }
+
+    .chat-widget-container {
+      pointer-events: all;
     }
 
     .chat-widget-container[data-position="right"] {
@@ -549,6 +555,9 @@ export class GLChatWidget extends LitElement {
     // On mobile, consider going directly to fullscreen for better UX
     if (this.isMobile) {
       this.widgetMode = "fullScreen";
+
+      this.parentOverflow = document.documentElement.style.overflow;
+      document.documentElement.style.overflow = "hidden";
     } else {
       this.widgetMode = "widget";
     }
@@ -610,6 +619,7 @@ export class GLChatWidget extends LitElement {
         data-position="${this.position}"
         data-fullscreen="${this.widgetMode === "fullScreen"}"
         data-mobile="${this.isMobile}"
+        data-mode="${this.widgetMode}"
       >
         <div
           class="chat-widget"
@@ -638,22 +648,24 @@ export class GLChatWidget extends LitElement {
             </iframe>
           </div>
         </div>
-        <button
-          class="chat-toggle-button"
-          data-position="${this.position}"
-          data-expanded="${this.widgetMode !== "hidden"}"
-          data-hidden="${this.widgetMode === "fullScreen"}"
-          @click="${this.toggleWidget}"
-          style=${styleMap({
-            "background-color":
-              this.widgetMode !== "hidden" ? "white" : this.colorTheme,
-          })}
-        >
-          ${this.widgetMode !== "hidden"
-            ? toggleButtonExpandedIcon
-            : this.toggleButtonMinimizedIcon}
-        </button>
+
       </div>
+
+      <button
+        class="chat-toggle-button"
+        data-position="${this.position}"
+        data-expanded="${this.widgetMode !== "hidden"}"
+        data-hidden="${this.widgetMode === "fullScreen"}"
+        @click="${this.toggleWidget}"
+        style=${styleMap({
+          "background-color":
+            this.widgetMode !== "hidden" ? "white" : this.colorTheme,
+        })}
+      >
+        ${this.widgetMode !== "hidden"
+          ? toggleButtonExpandedIcon
+          : this.toggleButtonMinimizedIcon}
+      </button>
     `;
   }
 }
