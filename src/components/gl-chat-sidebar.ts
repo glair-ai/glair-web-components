@@ -333,7 +333,7 @@ export class GLChatSidebar extends LitElement {
           ? this.position === "left"
             ? this.toggleButtonExpandedRightIcon
             : this.toggleButtonExpandedLeftIcon
-          : this.toggleButtonMinimizedIcon}
+          : html`<slot name="icon">${this.toggleButtonMinimizedIcon}</slot>`}
       </button>
     `;
   }
