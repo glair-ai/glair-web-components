@@ -675,7 +675,7 @@ export class GLChatWidget extends LitElement {
         >
           ${this.widgetMode !== "hidden"
             ? toggleButtonExpandedIcon
-            : this.toggleButtonMinimizedIcon}
+            : html`<slot name="icon">${this.toggleButtonMinimizedIcon}</slot>`}
         </button>
       </div>
     `;
