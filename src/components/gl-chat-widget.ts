@@ -14,6 +14,9 @@ export class GLChatWidget extends LitElement {
   @property({ type: String })
   colorTheme: string = "#00709F";
 
+  @property({ type: Boolean })
+  directExpandEnabled: boolean = false;
+
   // Internal state
   @state()
   private widgetMode: "hidden" | "widget" | "fullScreen" = "hidden";
@@ -549,7 +552,11 @@ export class GLChatWidget extends LitElement {
 
   private toggleWidget(): void {
     if (this.widgetMode === "hidden") {
-      this.showWidget();
+      if (this.directExpandEnabled) {
+        this.enterFullscreen();
+      } else {
+        this.showWidget();
+      }
     } else {
       this.hideWidget();
     }
