@@ -552,9 +552,7 @@ export class GLChatWidget extends LitElement {
 
   private toggleWidget(): void {
     if (this.widgetMode === "hidden") {
-      console.log('kakaka '+ this.directExpandEnabled)
       if (this.directExpandEnabled) {
-        console.log('kakakaka')
         this.enterFullscreen();
       } else {
         this.showWidget();
