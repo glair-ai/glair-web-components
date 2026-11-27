@@ -51,7 +51,7 @@ Existing components include `<gl-chat-widget>`, `<gl-chat-sidebar>`,
 | `src/lib/gl-chat-widget-sdk/bridge.ts` | Per-instance bridge: target discovery, queueing, origin checks, events. |
 | `src/lib/gl-chat-widget-sdk/global.ts` | `window.GLChat` facade; `init()` returns a per-iframe instance. |
 | `src/lib/gl-chat-widget-sdk/types.ts` | Public types (context, identity, errors, events). |
-| `docs/widget.md`, `docs/sidebar.md`, `docs/bare-iframe.md` | One guide per integration choice. |
+| `docs/gl-chat-widget.md`, `docs/gl-chat-sidebar.md`, `docs/gl-chat-bare-iframe.md` | One guide per integration choice. |
 
 ## Architecture notes
 
@@ -109,8 +109,8 @@ Existing components include `<gl-chat-widget>`, `<gl-chat-sidebar>`,
 
    `npm run build` cleans `lib/` and `standalone/`, emits declarations with
    `tsc`, bundles library entries with Vite, and builds the standalone bundles.
-3. Add or update the guide for the affected choice: `docs/widget.md`,
-   `docs/sidebar.md`, or `docs/bare-iframe.md`. `README.md` only links to them.
+3. Add or update the guide for the affected choice: `docs/gl-chat-widget.md`,
+   `docs/gl-chat-sidebar.md`, or `docs/gl-chat-bare-iframe.md`. `README.md` only links to them.
 4. Run the dev server / harnesses and verify the behavior you changed.
 
 ## Testing
@@ -134,23 +134,22 @@ dedicated HTML page under `test/`.
 
 | Choice | Script | Docs | Harness |
 | --- | --- | --- | --- |
-| Widget (component only) | `standalone/gl-chat-widget.js` | `docs/widget.md` | `npm run test:widget` |
-| Sidebar (component only) | `standalone/gl-chat-sidebar.js` | `docs/sidebar.md` | `npm run test:sidebar` |
-| Bare iframe (SDK) | `standalone/gl-chat-widget-sdk.js` | `docs/bare-iframe.md` | `npm run test:bare-iframe` |
+| Widget (component only) | `standalone/gl-chat-widget.js` | `docs/gl-chat-widget.md` | `npm run test:gl-chat-widget` |
+| Sidebar (component only) | `standalone/gl-chat-sidebar.js` | `docs/gl-chat-sidebar.md` | `npm run test:gl-chat-sidebar` |
+| Bare iframe (SDK) | `standalone/gl-chat-widget-sdk.js` | `docs/gl-chat-bare-iframe.md` | `npm run test:gl-chat-bare-iframe` |
 
-- `test/widget.html` / `test/sidebar.html` load the component **and** the SDK
-  entry so both the element facade and `window.GLChat` can be exercised.
-- `test/element-only.html` loads only the component scripts (no SDK entry) and
-  verifies that element methods work on widget and sidebar with
-  `window.GLChat` absent (`npm run test:element-only`).
-- `test/bare-iframe.html` uses only a plain `<iframe>` bound with
+- `test/gl-chat-widget.html` / `test/gl-chat-sidebar.html` load the component
+  **and** the SDK entry so both the element facade and `window.GLChat` can be
+  exercised. They work with only the component script tag as well — the bridge
+  is bundled into the component.
+- `test/gl-chat-bare-iframe.html` uses only a plain `<iframe>` bound with
   `GLChat.init({ iframe })`. `open()` / `close()` / `toggle()` are no-ops there:
   they log a warning and emit `widget_unavailable` because there is no component
   UI to control.
-- `test/multiple.html` puts two widgets, two sidebars and two bare iframes on
+- `test/gl-chat-multiple.html` puts two widgets, two sidebars and two bare iframes on
   one page and verifies each instance receives only its own messages with no
-  errors (`npm run test:multiple`).
-- `test/mock-chat.html` is the shared iframe target: it posts
+  errors (`npm run test:gl-chat-multiple`).
+- `test/gl-chat-mock-chat.html` is the shared iframe target: it posts
   `page-context-ready` on load, records messages received from the host, and
   forwards them to the host page as `{ type: 'glchat-test:received', payload }`
   (an unknown event type to the SDK, so it does not interfere).
@@ -165,7 +164,7 @@ Verification checklist:
 - Assigning `onLoad` / `onError` and `on(event, handler)` logs callbacks;
   `off(event, handler)` stops the specific handler.
 - Calls made before ready are queued and delivered after `page-context-ready`.
-- `npm run test:multiple` shows one marker per instance and an empty error list.
+- `npm run test:gl-chat-multiple` shows one marker per instance and an empty error list.
 
 ### Adding a new web component
 
@@ -175,7 +174,7 @@ Verification checklist:
 2. Put reusable non-rendering logic in `src/lib/` or `src/utils/`.
 3. Add `docs/<name>.md` and link it from the component table in `README.md`.
 4. For complex integrations, add a harness under `test/` and, if useful, an npm
-   script in `package.json` (see `test:widget` / `test:sidebar` for the pattern).
+   script in `package.json` (see `test:gl-chat-widget` / `test:gl-chat-sidebar` for the pattern).
 5. Run `npx tsc`, `npm run build`, and verify the component in the dev server or
    its harness.
 
@@ -187,7 +186,7 @@ Verification checklist:
 3. Add it to `GLChatGlobal` and the facade in `global.ts`.
 4. Add the same method to **both** `gl-chat-widget.ts` and
    `gl-chat-sidebar.ts`.
-5. Add buttons to **both** harness pages and update `docs/bare-iframe.md`
+5. Add buttons to **both** harness pages and update `docs/gl-chat-bare-iframe.md`
    (method reference + recipes) plus the component docs if relevant.
 6. Run `npx tsc`, `npm run build`, and both harnesses.
 

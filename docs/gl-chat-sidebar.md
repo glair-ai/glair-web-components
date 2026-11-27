@@ -1,7 +1,7 @@
 # GLChat Sidebar (`<gl-chat-sidebar>`)
 
 A side panel that embeds a GLChat page in an iframe. It exposes the same
-[Widget SDK](bare-iframe.md) methods as `<gl-chat-widget>`; the global
+[Widget SDK](gl-chat-bare-iframe.md) methods as `<gl-chat-widget>`; the global
 `window.GLChat` facade detects either component automatically.
 
 ## Installation
@@ -88,12 +88,11 @@ the `<gl-chat-sidebar>` script tag:
 
 Loading the SDK script as well adds the `window.GLChat` facade — that is what
 provides `onLoad`, `onError`, `on`/`off`, `init({ iframe })`, and global-method
-calls. Element methods themselves work either way. See
-[test/element-only.html](../test/element-only.html) (`npm run test:element-only`).
+calls. Element methods themselves work either way.
 
 Several sidebars can coexist: each element owns its own bridge, so
 `document.querySelectorAll("gl-chat-sidebar")` gives one independent API per
-element. See [test/multiple.html](../test/multiple.html) (`npm run test:multiple`).
+element. See [test/gl-chat-multiple.html](../test/gl-chat-multiple.html) (`npm run test:gl-chat-multiple`).
 
 ## Behavior notes
 
@@ -106,7 +105,7 @@ element. See [test/multiple.html](../test/multiple.html) (`npm run test:multiple
 ## Testing
 
 ```sh
-npm run test:sidebar   # opens test/sidebar.html with the Vite dev server
+npm run test:gl-chat-sidebar   # opens test/gl-chat-sidebar.html with the Vite dev server
 ```
 
 The harness loads `<gl-chat-sidebar>` together with the SDK, a mock chat iframe,

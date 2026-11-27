@@ -1,12 +1,12 @@
 # Bare iframe + GLChat Widget SDK
 
-`gl-chat-widget-sdk` exposes a tawk.to-style `window.GLChat` object. Use this
+`gl-chat-widget-sdk` exposes a `window.GLChat` object. Use this
 option when the host owns the iframe directly (for example NUI) instead of
 using `<gl-chat-widget>` or `<gl-chat-sidebar>`.
 
 Each `GLChat.init({ iframe })` call returns an API instance bound to that one
 iframe, so multiple bare iframes can coexist. For the component-based options,
-see [widget](widget.md) and [sidebar](sidebar.md) — component bundles include
+see [widget](gl-chat-widget.md) and [sidebar](gl-chat-sidebar.md) — component bundles include
 the bridge, so their element methods need only the component script tag.
 
 ### Method and event reference
@@ -63,7 +63,7 @@ No `<gl-chat-widget>` here. The host owns the iframe, so bind it explicitly with
 this style: they are no-ops that log a console warning **and** emit
 `onError` / `on('error')` with code `widget_unavailable`, so the host can detect
 and report the misconfiguration. A runnable version of this recipe is
-`test/bare-iframe.html` (`npm run test:bare-iframe`).
+`test/gl-chat-bare-iframe.html` (`npm run test:gl-chat-bare-iframe`).
 
 ```html
 <!doctype html>
@@ -137,7 +137,7 @@ chatB.setContext({ page: { route: "contracts" } });
 
 Each instance has its own context, queue and event handlers. Widgets and
 sidebars also create one bridge per element, so all three choices can coexist
-on one page. See `test/multiple.html` (`npm run test:multiple`).
+on one page. See `test/gl-chat-multiple.html` (`npm run test:gl-chat-multiple`).
 
 Messages are always posted to the exact iframe origin (never `"*"`), and
 incoming messages are accepted only from that origin and that iframe's
@@ -146,5 +146,5 @@ domains (`NEXT_PUBLIC_FEATURE_TRUSTED_EVENT_DOMAINS`).
 
 ## Component docs
 
-- [GLChat Widget (`<gl-chat-widget>`)](widget.md)
-- [GLChat Sidebar (`<gl-chat-sidebar>`)](sidebar.md)
+- [GLChat Widget (`<gl-chat-widget>`)](gl-chat-widget.md)
+- [GLChat Sidebar (`<gl-chat-sidebar>`)](gl-chat-sidebar.md)

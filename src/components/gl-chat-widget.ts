@@ -567,9 +567,9 @@ export class GLChatWidget extends LitElement {
   }
 
   // ----------------------------------------------------------------
-  // Host SDK API — element facade over the shared bridge. The tawk.to-style
-  // `window.GLChat` global delegates to the same bridge, so there is one
-  // protocol for both integration styles.
+  // Host SDK API — element facade over this element's bridge. The
+  // `window.GLChat` facade uses the same protocol, so both integration styles
+  // send identical messages.
   // ----------------------------------------------------------------
 
   private getSdk(): GLChatHostBridge {

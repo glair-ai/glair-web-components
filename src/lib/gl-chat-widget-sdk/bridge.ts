@@ -98,7 +98,7 @@ export class GLChatHostBridge {
     source: MessageEventSource | null;
   }> = [];
   private listening = false;
-  /** tawk.to's `onLoad` fires once, even when the chat page remounts. */
+  /** `onLoad` fires once, even when the chat page remounts. */
   private loadFired = false;
   private loadHandler: (() => void) | null = null;
   private errorHandler: ((error: GLChatError) => void) | null = null;
@@ -156,7 +156,7 @@ export class GLChatHostBridge {
 
   setLoadHandler(handler: (() => void) | null): void {
     this.loadHandler = handler;
-    // tawk.to-style: assigning onLoad after the widget is ready still fires.
+    // Assigning onLoad after the widget is ready still fires.
     if (handler && this.ready) {
       try {
         handler();

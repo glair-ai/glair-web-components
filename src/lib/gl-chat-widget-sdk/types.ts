@@ -1,5 +1,5 @@
 /**
- * Public types for the GLChat host SDK (tawk.to-style `window.GLChat` API).
+ * Public types for the GLChat host SDK (`window.GLChat` API).
  *
  * The wire format is deliberately kept private to the SDK: host pages only
  * deal with methods and events, never with `postMessage` payloads.

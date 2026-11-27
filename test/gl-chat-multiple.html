@@ -12,15 +12,15 @@
   </head>
   <body>
     <h1>Multiple instances on one page</h1>
-    <p>Run with <code>npm run test:multiple</code>.</p>
+    <p>Run with <code>npm run test:gl-chat-multiple</code>.</p>
 
     <iframe id="iframe-a" title="GLChat A"></iframe>
     <iframe id="iframe-b" title="GLChat B"></iframe>
 
-    <gl-chat-widget id="w1" url="/test/mock-chat.html"></gl-chat-widget>
-    <gl-chat-widget id="w2" url="/test/mock-chat.html"></gl-chat-widget>
-    <gl-chat-sidebar id="s1" url="/test/mock-chat.html"></gl-chat-sidebar>
-    <gl-chat-sidebar id="s2" url="/test/mock-chat.html"></gl-chat-sidebar>
+    <gl-chat-widget id="w1" url="/test/gl-chat-mock-chat.html"></gl-chat-widget>
+    <gl-chat-widget id="w2" url="/test/gl-chat-mock-chat.html"></gl-chat-widget>
+    <gl-chat-sidebar id="s1" url="/test/gl-chat-mock-chat.html"></gl-chat-sidebar>
+    <gl-chat-sidebar id="s2" url="/test/gl-chat-mock-chat.html"></gl-chat-sidebar>
 
     <pre id="log"></pre>
 
@@ -50,8 +50,8 @@
       b.onError = (e) => errors.push(`b: ${e.code}`);
 
       // Set src only after init() so the ready signal cannot be missed.
-      frameA.src = "/test/mock-chat.html";
-      frameB.src = "/test/mock-chat.html";
+      frameA.src = "/test/gl-chat-mock-chat.html";
+      frameB.src = "/test/gl-chat-mock-chat.html";
 
       await new Promise((resolve) => setTimeout(resolve, 200));
 

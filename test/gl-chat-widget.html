@@ -2,55 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Test: bare iframe + Widget SDK</title>
+    <title>Test: gl-chat-widget + Widget SDK</title>
     <style>
       body { font: 14px system-ui, sans-serif; margin: 16px; }
       h1 { font-size: 18px; }
       .controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
       button { padding: 6px 10px; cursor: pointer; }
-      iframe {
-        width: 360px;
-        height: 300px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-      }
-      pre { background: #f4f4f4; padding: 10px; min-height: 260px; overflow: auto; }
+      .panel { display: flex; gap: 16px; }
+      pre { background: #f4f4f4; padding: 10px; flex: 1; min-height: 300px; overflow: auto; }
     </style>
   </head>
   <body>
-    <h1>Bare iframe + gl-chat-widget-sdk</h1>
-    <p>Run with <code>npm run test:bare-iframe</code>.</p>
+    <h1>gl-chat-widget + gl-chat-widget-sdk</h1>
+    <p>Run with <code>npm run test:gl-chat-widget</code>.</p>
 
     <div class="controls">
-      <button id="init">init({ iframe })</button>
       <button id="identity-object">setIdentity(object)</button>
       <button id="identity-args">setIdentity(token, org)</button>
       <button id="logout">logout()</button>
       <button id="set-context">setContext()</button>
       <button id="update-context">updateContext()</button>
       <button id="clear-context">clearContext()</button>
-      <button id="open">open()</button>
-      <button id="close">close()</button>
-      <button id="toggle">toggle()</button>
+      <button id="open">GLChat.open()</button>
+      <button id="close">GLChat.close()</button>
+      <button id="toggle">GLChat.toggle()</button>
+      <button id="element-context">widget.setContext()</button>
+      <button id="element-open">widget.open()</button>
+      <button id="element-close">widget.close()</button>
+      <button id="element-toggle">widget.toggle()</button>
       <button id="off">off('ready')</button>
     </div>
 
-    <!-- No <gl-chat-widget> / <gl-chat-sidebar>: the host owns the iframe. -->
-    <!-- src is set in JS after GLChat.init(), so the ready message cannot be
-         missed while the deferred SDK module is still loading. -->
-    <iframe id="glchat-iframe" title="GLChat"></iframe>
+    <gl-chat-widget
+      url="/test/gl-chat-mock-chat.html"
+      position="right"
+      color-theme="#00709F"
+    ></gl-chat-widget>
 
-    <pre id="log"></pre>
+    <div class="panel">
+      <pre id="log"></pre>
+    </div>
 
     <script type="module">
       import "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget.ts";
 
+      await customElements.whenDefined("gl-chat-widget");
       const api = window.GLChat;
       const log = document.querySelector("#log");
       const write = (message) => {
         log.textContent += `${new Date().toISOString().slice(11, 19)} ${message}\n`;
         log.scrollTop = log.scrollHeight;
       };
+      const widget = () => document.querySelector("gl-chat-widget");
 
       api.onLoad = () => write("onLoad fired");
       api.onError = (error) => write(`onError ${error.code}: ${error.message}`);
@@ -74,24 +78,12 @@
         }
       });
 
-      // Bind the explicit iframe; `origin` defaults to the iframe src origin.
-      const iframe = document.querySelector("#glchat-iframe");
-      // Handler assignment above is the single onLoad / onError channel;
-      // init() also accepts onLoad / onError options (see docs) but passing
-      // them here would replace those handlers.
-      api.init({ iframe });
-      iframe.src = "/test/mock-chat.html";
-
       const bind = (id, fn) =>
         (document.querySelector(`#${id}`).onclick = () => {
           write(`call ${id}()`);
           fn();
         });
 
-      bind("init", () => {
-        api.init({ iframe });
-        iframe.src = "/test/mock-chat.html";
-      });
       bind("identity-object", () =>
         api.setIdentity({ token: "demo-token", organization: "acme" }),
       );
@@ -99,8 +91,8 @@
       bind("logout", () => api.logout());
       bind("set-context", () =>
         api.setContext({
-          page: { route: "bare-iframe.detail", title: "Bare iframe" },
-          entities: [{ type: "contract", id: "CTR-1234", label: "CTR-1234" }],
+          page: { route: "payroll.detail", title: "Payroll" },
+          entities: [{ type: "employee", id: "E-123", label: "Budi" }],
           filters: { period: "2026-10" },
           extra: { source: "harness" },
         }),
@@ -109,14 +101,18 @@
         api.updateContext({ filters: { period: "2026-11" } }),
       );
       bind("clear-context", () => api.clearContext());
-      // No web component on this page: these log a console warning and emit
-      // onError / on('error') with code 'widget_unavailable' (visible in the log).
       bind("open", () => api.open());
       bind("close", () => api.close());
       bind("toggle", () => api.toggle());
+      bind("element-context", () =>
+        widget().setContext({ page: { route: "from-element" } }),
+      );
+      bind("element-open", () => widget().open());
+      bind("element-close", () => widget().close());
+      bind("element-toggle", () => widget().toggle());
       bind("off", () => api.off("ready", onReady));
 
-      write(`SDK v${api.version} ready; target: bare iframe`);
+      write(`SDK v${api.version} ready; target: ${widget()?.tagName.toLowerCase()}`);
     </script>
   </body>
 </html>

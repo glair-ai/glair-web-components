@@ -154,7 +154,7 @@ widget.setContext({ page: { route: "payroll.detail" } });
 widget.open();
 ```
 
-→ [docs/widget.md](docs/widget.md) · `npm run test:widget`
+→ [docs/gl-chat-widget.md](docs/gl-chat-widget.md) · `npm run test:gl-chat-widget`
 
 ### 2. Sidebar
 
@@ -171,7 +171,7 @@ sidebar.setContext({ entities: [{ type: "employee", id: "E-123" }] });
 sidebar.open();
 ```
 
-→ [docs/sidebar.md](docs/sidebar.md) · `npm run test:sidebar`
+→ [docs/gl-chat-sidebar.md](docs/gl-chat-sidebar.md) · `npm run test:gl-chat-sidebar`
 
 ### 3. Bare iframe
 
@@ -188,10 +188,10 @@ const chat = window.GLChat.init({ iframe: document.querySelector("#chat") });
 chat.setContext({ page: { route: "payroll.detail" } });
 ```
 
-→ [docs/bare-iframe.md](docs/bare-iframe.md) · `npm run test:bare-iframe`
+→ [docs/gl-chat-bare-iframe.md](docs/gl-chat-bare-iframe.md) · `npm run test:gl-chat-bare-iframe`
 
 Multiple widgets, sidebars and bare iframes can coexist; see
-`npm run test:multiple`.
+`npm run test:gl-chat-multiple`.
 
 ---
 
@@ -199,9 +199,9 @@ Multiple widgets, sidebars and bare iframes can coexist; see
 
 | Name | Tag | Docs | `<script>` | ES Module |
 | --- | --- | --- | --- | --- |
-| GLChat Widget | `<gl-chat-widget>` | [docs/widget.md](docs/widget.md) | `/standalone/gl-chat-widget` | `/lib/gl-chat-widget` |
-| GLChat Sidebar | `<gl-chat-sidebar>` | [docs/sidebar.md](docs/sidebar.md) | `/standalone/gl-chat-sidebar` | `/lib/gl-chat-sidebar` |
-| GLChat Widget SDK | `window.GLChat` | [docs/bare-iframe.md](docs/bare-iframe.md) | `/standalone/gl-chat-widget-sdk` | `/lib/gl-chat-widget-sdk` |
+| GLChat Widget | `<gl-chat-widget>` | [docs/gl-chat-widget.md](docs/gl-chat-widget.md) | `/standalone/gl-chat-widget` | `/lib/gl-chat-widget` |
+| GLChat Sidebar | `<gl-chat-sidebar>` | [docs/gl-chat-sidebar.md](docs/gl-chat-sidebar.md) | `/standalone/gl-chat-sidebar` | `/lib/gl-chat-sidebar` |
+| GLChat Widget SDK | `window.GLChat` | [docs/gl-chat-bare-iframe.md](docs/gl-chat-bare-iframe.md) | `/standalone/gl-chat-widget-sdk` | `/lib/gl-chat-widget-sdk` |
 | Webcam | `<glair-webcam>` | [Webcam](#webcam) | `/standalone/webcam` | `/lib/webcam` |
 
 ---
