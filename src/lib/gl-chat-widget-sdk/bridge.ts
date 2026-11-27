@@ -20,6 +20,58 @@ import type {
 const MAX_CONTEXT_BYTES = 8 * 1024;
 const MAX_QUEUED_CALLS = 50;
 
+/** Every GLChat iframe on the page, shared across independently bundled
+ * components and SDK instances. Messages from another GLChat iframe are
+ * ignored silently so multiple instances never report false origin errors. */
+const IFRAMES_KEY = Symbol.for("glair.gl-chat-widget.sdk.iframes");
+const DEFAULT_KEY = Symbol.for("glair.gl-chat-widget.sdk.defaultBridge");
+
+type PageState = Record<symbol, Set<HTMLIFrameElement> | GLChatHostBridge | undefined>;
+
+function pageState(): PageState | null {
+  return typeof window === "undefined"
+    ? null
+    : (window as unknown as PageState);
+}
+
+function registerIframe(iframe: HTMLIFrameElement): void {
+  const state = pageState();
+  if (!state) return;
+  let frames = state[IFRAMES_KEY] as Set<HTMLIFrameElement> | undefined;
+  if (!frames) {
+    frames = new Set<HTMLIFrameElement>();
+    state[IFRAMES_KEY] = frames;
+  }
+  frames.add(iframe);
+}
+
+/** True when `source` belongs to a different registered GLChat iframe. */
+function isOtherGLChatIframe(
+  source: MessageEventSource | null,
+  ownIframe: HTMLIFrameElement | null,
+): boolean {
+  const state = pageState();
+  if (!state || !source) return false;
+
+  // A component's iframe may not have been registered yet at the moment a
+  // sibling sends its ready message. Keep the registry in sync.
+  const hosts = Array.from(
+    document.querySelectorAll?.("gl-chat-widget, gl-chat-sidebar") ?? [],
+  ) as HTMLElement[];
+  for (const host of hosts) {
+    const frame = host.shadowRoot?.querySelector("iframe");
+    if (frame) registerIframe(frame);
+  }
+
+  const frames = state[IFRAMES_KEY] as Set<HTMLIFrameElement> | undefined;
+  if (!frames) return false;
+  let other = false;
+  frames.forEach((frame) => {
+    if (frame !== ownIframe && frame.contentWindow === source) other = true;
+  });
+  return other;
+}
+
 /** The single host-side bridge shared by the `window.GLChat` global and the
  * `<gl-chat-widget>` element methods. There is one protocol, two facades. */
 export class GLChatHostBridge {
@@ -30,8 +82,6 @@ export class GLChatHostBridge {
   /** Readiness is per iframe: switching between a widget and a sidebar must
    * not force a new handshake with an iframe that already announced it. */
   private readyIframes = new WeakSet<HTMLIFrameElement>();
-  /** All GLChat iframes on the page, not just the active target. */
-  private knownIframes: HTMLIFrameElement[] = [];
   private queue: Array<{ type: OutboundEvent; send: () => void }> = [];
   /** True when a queued `page-context` send will be flushed on ready. */
   private pendingContext = false;
@@ -68,6 +118,7 @@ export class GLChatHostBridge {
     if (options.onLoad) this.setLoadHandler(options.onLoad);
     if (options.onError) this.setErrorHandler(options.onError);
     this.options = { ...this.options, ...options };
+    if (options.widget !== undefined) this.widget = options.widget;
 
     this.ensureListening();
     this.resolveTarget();
@@ -220,34 +271,16 @@ export class GLChatHostBridge {
   // Target resolution
   // ------------------------------------------------------------------
 
-  /** Track every GLChat iframe on the page so a component that is not the
-   * active target can still record its ready handshake. */
-  private collectKnownIframes(): void {
-    if (typeof document === "undefined") return;
-    const hosts = Array.from(
-      document.querySelectorAll?.("gl-chat-widget, gl-chat-sidebar") ?? [],
-    ) as HTMLElement[];
-    for (const host of hosts) {
-      const frame = host.shadowRoot?.querySelector("iframe");
-      if (frame && !this.knownIframes.includes(frame)) {
-        this.knownIframes.push(frame);
-      }
-    }
-    for (const frame of [this.options.iframe, this.widget?.shadowRoot?.querySelector("iframe")]) {
-      if (frame && !this.knownIframes.includes(frame)) {
-        this.knownIframes.push(frame);
-      }
-    }
-  }
-
   private resolveTarget(): boolean {
     if (typeof document === "undefined") return false;
-    this.collectKnownIframes();
 
     let iframe = this.options.iframe ?? null;
 
-    if (!iframe && this.widget) {
+    if (this.widget) {
+      // Only ever use this element's own iframe. Lit renders it
+      // asynchronously; waiting is better than grabbing a sibling's iframe.
       iframe = this.widget.shadowRoot?.querySelector("iframe") ?? null;
+      if (!iframe) return false;
     }
 
     if (!iframe) {
@@ -265,6 +298,7 @@ export class GLChatHostBridge {
 
     if (iframe !== this.iframe) {
       this.iframe = iframe;
+      registerIframe(iframe);
       // Reuse the handshake if this iframe already announced readiness.
       this.ready = this.readyIframes.has(iframe);
       this.flushPendingMessages();
@@ -361,16 +395,10 @@ export class GLChatHostBridge {
     if (!payload || !isKnownEvent(payload.type)) return;
 
     const type = payload.type;
-    this.collectKnownIframes();
 
-    // With both a widget and a sidebar on the page, only one iframe is the
-    // active target. Still record a ready signal from the other one so
-    // switching targets later does not require a new handshake.
-    const known = this.knownIframes.find((frame) => frame.contentWindow === source);
-    if (known && isInboundEvent(type)) {
-      this.readyIframes.add(known);
-      if (known !== this.iframe) return;
-    }
+    // Several widgets, sidebars or bare iframes can coexist. Ignore messages
+    // from another GLChat iframe without reporting an error to this host.
+    if (isOtherGLChatIframe(source, this.iframe)) return;
 
     // The chat page may signal ready before the element has rendered its
     // iframe; resolve the target first, then buffer the message if needed.
@@ -518,26 +546,42 @@ export class GLChatHostBridge {
   }
 }
 
-let bridge: GLChatHostBridge | null = null;
-
-/** Standalone bundles are built independently, so a module-local singleton
- * would give `window.GLChat` and the web components different bridges. Share
- * one instance per page through a well-known symbol instead. */
-const BRIDGE_KEY = Symbol.for("glair.gl-chat-widget.sdk.bridge");
-
-function sharedWindow(): Record<symbol, GLChatHostBridge | undefined> | null {
-  return typeof window === "undefined"
-    ? null
-    : (window as unknown as Record<symbol, GLChatHostBridge | undefined>);
+/** Create an independent bridge for one explicit target. `GLChat.init()` uses
+ * this so multiple bare iframes each get their own API instance. */
+export function createBridge(options: GLChatInitOptions = {}): GLChatHostBridge {
+  const bridge = new GLChatHostBridge();
+  bridge.init(options);
+  return bridge;
 }
 
-/** Returns the page-wide bridge instance. */
+/** The default bridge backs `window.GLChat`'s convenience methods and the
+ * first web component on the page. Shared across standalone bundles via a
+ * well-known symbol. */
 export function getBridge(): GLChatHostBridge {
-  const win = sharedWindow();
-  const existing = win?.[BRIDGE_KEY];
+  const state = pageState();
+  const existing = state?.[DEFAULT_KEY] as GLChatHostBridge | undefined;
   if (existing) return existing;
 
-  if (!bridge) bridge = new GLChatHostBridge();
-  if (win) win[BRIDGE_KEY] = bridge;
+  const bridge = new GLChatHostBridge();
+  bridge.init();
+  if (state) state[DEFAULT_KEY] = bridge;
   return bridge;
+}
+
+/** Change which bridge the global convenience methods target. */
+export function setDefaultBridge(bridge: GLChatHostBridge): void {
+  const state = pageState();
+  if (state) state[DEFAULT_KEY] = bridge;
+}
+
+/** Web components call this so several instances can coexist: the first one
+ * becomes the default, later ones keep their own bridge. */
+export function claimDefaultBridge(bridge: GLChatHostBridge): void {
+  const state = pageState();
+  if (state && !state[DEFAULT_KEY]) state[DEFAULT_KEY] = bridge;
+}
+
+export function clearDefaultBridge(bridge: GLChatHostBridge): void {
+  const state = pageState();
+  if (state && state[DEFAULT_KEY] === bridge) delete state[DEFAULT_KEY];
 }

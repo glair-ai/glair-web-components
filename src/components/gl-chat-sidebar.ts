@@ -1,6 +1,10 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { getBridge } from "../lib/gl-chat-widget-sdk/bridge";
+import {
+  GLChatHostBridge,
+  claimDefaultBridge,
+  clearDefaultBridge,
+} from "../lib/gl-chat-widget-sdk/bridge";
 import type {
   GLChatContext,
   GLChatIdentity,
@@ -21,6 +25,9 @@ export class GLChatSidebar extends LitElement {
   // Internal state
   @state()
   private isOpen: boolean = false;
+
+  /** One bridge per element instance, so several sidebars can coexist. */
+  private readonly sdk = new GLChatHostBridge();
 
   // SVG icons
   private toggleButtonExpandedLeftIcon = html`<svg
@@ -235,8 +242,8 @@ export class GLChatSidebar extends LitElement {
   // Lifecycle methods
   connectedCallback() {
     super.connectedCallback();
-    // The element API and the `window.GLChat` global share one protocol.
-    getBridge().setWidget(this);
+    this.sdk.init({ widget: this });
+    claimDefaultBridge(this.sdk);
     this.adjustMainContent();
   }
 
@@ -269,9 +276,8 @@ export class GLChatSidebar extends LitElement {
   // <gl-chat-widget>. `window.GLChat` uses the same bridge.
   // ----------------------------------------------------------------
 
-  private getSdk() {
-    getBridge().setWidget(this);
-    return getBridge();
+  private getSdk(): GLChatHostBridge {
+    return this.sdk;
   }
 
   /** Partner SSO login. Sends `{ type: 'auth-idp', token, organization }`. */
@@ -403,7 +409,8 @@ export class GLChatSidebar extends LitElement {
   }
 
   disconnectedCallback() {
-    getBridge().setWidget(null);
+    this.sdk.destroy();
+    clearDefaultBridge(this.sdk);
     // Reset main content margins when component is removed
     document.body.style.marginLeft = "0";
     document.body.style.marginRight = "0";

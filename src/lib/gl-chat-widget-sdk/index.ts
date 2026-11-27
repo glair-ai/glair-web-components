@@ -1,5 +1,16 @@
-export { GLChatHostBridge, getBridge } from "./bridge";
-export { installGLChatGlobal, type GLChatGlobal } from "./global";
+export {
+  GLChatHostBridge,
+  createBridge,
+  getBridge,
+  setDefaultBridge,
+  claimDefaultBridge,
+  clearDefaultBridge,
+} from "./bridge";
+export {
+  installGLChatGlobal,
+  type GLChatGlobal,
+  type GLChatInstance,
+} from "./global";
 export {
   INBOUND_EVENTS,
   OUTBOUND_EVENTS,

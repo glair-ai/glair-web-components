@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test: multiple widgets, sidebars and bare iframes</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      h1 { font-size: 18px; }
+      iframe { width: 200px; height: 140px; border: 1px solid #ccc; margin: 4px; }
+      pre { background: #f4f4f4; padding: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>Multiple instances on one page</h1>
+    <p>Run with <code>npm run test:multiple</code>.</p>
+
+    <iframe id="iframe-a" title="GLChat A"></iframe>
+    <iframe id="iframe-b" title="GLChat B"></iframe>
+
+    <gl-chat-widget id="w1" url="/test/mock-chat.html"></gl-chat-widget>
+    <gl-chat-widget id="w2" url="/test/mock-chat.html"></gl-chat-widget>
+    <gl-chat-sidebar id="s1" url="/test/mock-chat.html"></gl-chat-sidebar>
+    <gl-chat-sidebar id="s2" url="/test/mock-chat.html"></gl-chat-sidebar>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget.ts";
+      import "/src/components/gl-chat-sidebar.ts";
+
+      await Promise.all([
+        customElements.whenDefined("gl-chat-widget"),
+        customElements.whenDefined("gl-chat-sidebar"),
+      ]);
+
+      const log = document.querySelector("#log");
+      const write = (message) => {
+        log.textContent += `${message}\n`;
+      };
+      const errors = [];
+      window.__errors = errors;
+
+      // Each init() returns its own API bound to its own iframe.
+      const frameA = document.querySelector("#iframe-a");
+      const frameB = document.querySelector("#iframe-b");
+      const a = window.GLChat.init({ iframe: frameA });
+      const b = window.GLChat.init({ iframe: frameB });
+      a.onError = (e) => errors.push(`a: ${e.code}`);
+      b.onError = (e) => errors.push(`b: ${e.code}`);
+
+      // Set src only after init() so the ready signal cannot be missed.
+      frameA.src = "/test/mock-chat.html";
+      frameB.src = "/test/mock-chat.html";
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      a.setContext({ marker: "bare-a" });
+      b.setContext({ marker: "bare-b" });
+      document.querySelector("#w1").setContext({ marker: "widget-1" });
+      document.querySelector("#w2").setContext({ marker: "widget-2" });
+      document.querySelector("#s1").setContext({ marker: "sidebar-1" });
+      document.querySelector("#s2").setContext({ marker: "sidebar-2" });
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const received = {};
+      for (const [name, root] of [
+        ["bare-a", frameA],
+        ["bare-b", frameB],
+        ["widget-1", document.querySelector("#w1")],
+        ["widget-2", document.querySelector("#w2")],
+        ["sidebar-1", document.querySelector("#s1")],
+        ["sidebar-2", document.querySelector("#s2")],
+      ]) {
+        const iframe =
+          root.tagName === "IFRAME" ? root : root.shadowRoot.querySelector("iframe");
+        received[name] = (iframe.contentWindow.__received ?? []).map(
+          (message) => message.pageContext?.marker ?? message.type,
+        );
+      }
+      write(`received ${JSON.stringify(received, null, 2)}`);
+      write(`errors ${JSON.stringify(errors)}`);
+      window.__result = { received, errors };
+    </script>
+  </body>
+</html>

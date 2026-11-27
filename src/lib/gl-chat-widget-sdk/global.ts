@@ -1,4 +1,9 @@
-import { getBridge, type GLChatHostBridge } from "./bridge";
+import {
+  createBridge,
+  getBridge,
+  setDefaultBridge,
+  type GLChatHostBridge,
+} from "./bridge";
 import type {
   GLChatContext,
   GLChatError,
@@ -8,33 +13,30 @@ import type {
   GLChatInitOptions,
 } from "./types";
 
-/** tawk.to-style global API. Every method returns the API so calls can be
- * chained, and calls made before the widget is ready are queued. */
-export interface GLChatGlobal {
-  /** Bind to an explicit iframe / origin. Optional when a GLChat web
-   * component is already on the page. */
-  init(options?: GLChatInitOptions): GLChatGlobal;
-  /** Partner SSO login (`auth-idp`). */
+/** API bound to one target. `GLChat.init()` returns one of these per iframe,
+ * so several bare iframes can coexist on the same page. */
+export interface GLChatInstance {
   setIdentity(
     token: string | GLChatIdentity,
     organization?: string,
-  ): GLChatGlobal;
-  /** Partner SSO logout (`logout-idp`). */
-  logout(): GLChatGlobal;
-  /** Replace page context (`page-context`). */
-  setContext(context: GLChatContext): GLChatGlobal;
-  /** Merge a patch into the current page context. */
-  updateContext(patch: Partial<GLChatContext>): GLChatGlobal;
-  /** Empty the page context so stale data is not reused. */
-  clearContext(): GLChatGlobal;
-  on(event: GLChatEventName, handler: GLChatEventHandler): GLChatGlobal;
-  off(event: GLChatEventName, handler: GLChatEventHandler): GLChatGlobal;
-  /** Delegate to the on-page widget, when available. */
-  open(): GLChatGlobal;
-  close(): GLChatGlobal;
-  toggle(): GLChatGlobal;
+  ): GLChatInstance;
+  logout(): GLChatInstance;
+  setContext(context: GLChatContext): GLChatInstance;
+  updateContext(patch: Partial<GLChatContext>): GLChatInstance;
+  clearContext(): GLChatInstance;
+  on(event: GLChatEventName, handler: GLChatEventHandler): GLChatInstance;
+  off(event: GLChatEventName, handler: GLChatEventHandler): GLChatInstance;
+  open(): GLChatInstance;
+  close(): GLChatInstance;
+  toggle(): GLChatInstance;
   onLoad: (() => void) | null;
   onError: ((error: GLChatError) => void) | null;
+}
+
+/** Global facade. Convenience methods target the default bridge (the first
+ * web component, or the most recent `init()` call). */
+export interface GLChatGlobal extends GLChatInstance {
+  init(options?: GLChatInitOptions): GLChatInstance;
   readonly version: string;
 }
 
@@ -62,13 +64,76 @@ function control(
     element[method]?.();
     return;
   }
-  // A bare iframe has no UI to control. Tell the host through the documented
-  // error channel, not only via console.warn.
   const message =
     `${method}() requires <gl-chat-widget> or <gl-chat-sidebar> on the page. ` +
     `A bare iframe has no widget UI to open, close or toggle.`;
   console.warn(`[GLChat] ${message}`);
   bridge.emitError("widget_unavailable", message);
+}
+
+/** Install the same methods on a global facade or on an instance returned by
+ * `init()`. `bridgeFor` is resolved at call time so the global follows the
+ * default bridge after another `init()`. */
+function defineFacade<T extends object>(
+  target: T,
+  bridgeFor: () => GLChatHostBridge,
+): T {
+  const methods = {
+    setIdentity: (token: string | GLChatIdentity, organization?: string) => {
+      bridgeFor().setIdentity(token, organization);
+      return target;
+    },
+    logout: () => {
+      bridgeFor().logout();
+      return target;
+    },
+    setContext: (context: GLChatContext) => {
+      bridgeFor().setContext(context);
+      return target;
+    },
+    updateContext: (patch: Partial<GLChatContext>) => {
+      bridgeFor().updateContext(patch);
+      return target;
+    },
+    clearContext: () => {
+      bridgeFor().clearContext();
+      return target;
+    },
+    on: (event: GLChatEventName, handler: GLChatEventHandler) => {
+      bridgeFor().on(event, handler);
+      return target;
+    },
+    off: (event: GLChatEventName, handler: GLChatEventHandler) => {
+      bridgeFor().off(event, handler);
+      return target;
+    },
+    open: () => {
+      control("open", bridgeFor());
+      return target;
+    },
+    close: () => {
+      control("close", bridgeFor());
+      return target;
+    },
+    toggle: () => {
+      control("toggle", bridgeFor());
+      return target;
+    },
+  };
+
+  Object.assign(target, methods);
+  Object.defineProperty(target, "onLoad", {
+    configurable: true,
+    get: () => bridgeFor().getLoadHandler(),
+    set: (handler: (() => void) | null) => bridgeFor().setLoadHandler(handler),
+  });
+  Object.defineProperty(target, "onError", {
+    configurable: true,
+    get: () => bridgeFor().getErrorHandler(),
+    set: (handler: ((error: GLChatError) => void) | null) =>
+      bridgeFor().setErrorHandler(handler),
+  });
+  return target;
 }
 
 /**
@@ -79,97 +144,41 @@ function control(
  */
 export function installGLChatGlobal(): GLChatGlobal {
   const win = window as unknown as { GLChat?: GLChatGlobal };
-  const existing = win.GLChat ?? ({} as GLChatGlobal);
+  const existing = (win.GLChat ?? {}) as GLChatGlobal;
   const marker = Symbol.for("glair.gl-chat-widget.sdk.installed");
 
   if ((existing as unknown as Record<symbol, boolean>)[marker]) {
     return existing;
   }
 
-  const bridge = getBridge();
   const preexistingLoad = existing.onLoad;
   const preexistingError = existing.onError;
 
-  const methods: Omit<
-    GLChatGlobal,
-    "onLoad" | "onError" | "version"
-  > = {
-    init: (options) => {
-      bridge.init(options);
-      return existing;
-    },
-    setIdentity: (token, organization) => {
-      bridge.setIdentity(token, organization);
-      return existing;
-    },
-    logout: () => {
-      bridge.logout();
-      return existing;
-    },
-    setContext: (context) => {
-      bridge.setContext(context);
-      return existing;
-    },
-    updateContext: (patch) => {
-      bridge.updateContext(patch);
-      return existing;
-    },
-    clearContext: () => {
-      bridge.clearContext();
-      return existing;
-    },
-    on: (event, handler) => {
-      bridge.on(event, handler);
-      return existing;
-    },
-    off: (event, handler) => {
-      bridge.off(event, handler);
-      return existing;
-    },
-    open: () => {
-      control("open", bridge);
-      return existing;
-    },
-    close: () => {
-      control("close", bridge);
-      return existing;
-    },
-    toggle: () => {
-      control("toggle", bridge);
-      return existing;
-    },
+  existing.init = (options) => {
+    // Each call gets its own bridge, so multiple bare iframes are independent.
+    const instance = createBridge(options);
+    setDefaultBridge(instance);
+    return defineFacade({}, () => instance) as GLChatInstance;
   };
 
-  Object.assign(existing, methods);
+  defineFacade(existing, getBridge);
 
-  Object.defineProperty(existing, "onLoad", {
-    configurable: true,
-    get: () => bridge.getLoadHandler(),
-    set: (handler: (() => void) | null) => bridge.setLoadHandler(handler),
-  });
-  Object.defineProperty(existing, "onError", {
-    configurable: true,
-    get: () => bridge.getErrorHandler(),
-    set: (handler: ((error: GLChatError) => void) | null) =>
-      bridge.setErrorHandler(handler),
-  });
   Object.defineProperty(existing, "version", {
     configurable: true,
     enumerable: true,
     value: "1.0.0",
   });
-  Object.defineProperty(existing, marker, {
-    value: true,
-  });
+  Object.defineProperty(existing, marker, { value: true });
 
   win.GLChat = existing;
-  bridge.init();
 
+  const defaultBridge = getBridge();
+  defaultBridge.init();
   if (typeof preexistingLoad === "function") {
-    bridge.setLoadHandler(preexistingLoad);
+    defaultBridge.setLoadHandler(preexistingLoad);
   }
   if (typeof preexistingError === "function") {
-    bridge.setErrorHandler(preexistingError);
+    defaultBridge.setErrorHandler(preexistingError);
   }
 
   return existing;

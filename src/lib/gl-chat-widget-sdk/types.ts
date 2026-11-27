@@ -50,6 +50,8 @@ export type GLChatEventName =
 export type GLChatEventHandler = (detail?: unknown) => void;
 
 export interface GLChatInitOptions {
+  /** Web component that owns the iframe (used internally by the elements). */
+  widget?: HTMLElement | null;
   /** Explicit iframe to talk to. Useful when the host embeds the iframe
    * directly (NUI) instead of using `<gl-chat-widget>`. */
   iframe?: HTMLIFrameElement | null;

@@ -135,14 +135,63 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ---
 
-## GLChat Widget SDK
+## Choose a GLChat integration
 
-`gl-chat-widget-sdk` exposes a tawk.to-style `window.GLChat` object for talking
-to the chat iframe. It works with both `<gl-chat-widget>` and
-`<gl-chat-sidebar>`.
+Pick one of three options. Each supports multiple instances on the same page.
 
-See the full API reference and five integration recipes in
-**[docs/gl-chat-widget-sdk.md](docs/gl-chat-widget-sdk.md)**.
+### 1. Widget
+
+Load only the widget component, then use the element API:
+
+```html
+<script type="module" src="https://unpkg.com/@glair/web-components/standalone/gl-chat-widget.js"></script>
+<gl-chat-widget url="https://chat.example.com"></gl-chat-widget>
+```
+
+```js
+const widget = document.querySelector("gl-chat-widget");
+widget.setContext({ page: { route: "payroll.detail" } });
+widget.open();
+```
+
+→ [docs/widget.md](docs/widget.md) · `npm run test:widget`
+
+### 2. Sidebar
+
+Load only the sidebar component, then use the element API:
+
+```html
+<script type="module" src="https://unpkg.com/@glair/web-components/standalone/gl-chat-sidebar.js"></script>
+<gl-chat-sidebar url="https://chat.example.com"></gl-chat-sidebar>
+```
+
+```js
+const sidebar = document.querySelector("gl-chat-sidebar");
+sidebar.setContext({ entities: [{ type: "employee", id: "E-123" }] });
+sidebar.open();
+```
+
+→ [docs/sidebar.md](docs/sidebar.md) · `npm run test:sidebar`
+
+### 3. Bare iframe
+
+Load the SDK and bind each iframe with `GLChat.init()` — the returned value is
+that iframe's API:
+
+```html
+<iframe id="chat" src="https://chat.example.com"></iframe>
+<script type="module" src="https://unpkg.com/@glair/web-components/standalone/gl-chat-widget-sdk.js"></script>
+```
+
+```js
+const chat = window.GLChat.init({ iframe: document.querySelector("#chat") });
+chat.setContext({ page: { route: "payroll.detail" } });
+```
+
+→ [docs/bare-iframe.md](docs/bare-iframe.md) · `npm run test:bare-iframe`
+
+Multiple widgets, sidebars and bare iframes can coexist; see
+`npm run test:multiple`.
 
 ---
 
@@ -150,9 +199,9 @@ See the full API reference and five integration recipes in
 
 | Name | Tag | Docs | `<script>` | ES Module |
 | --- | --- | --- | --- | --- |
-| GLChat Widget | `<gl-chat-widget>` | [docs/gl-chat-widget.md](docs/gl-chat-widget.md) | `/standalone/gl-chat-widget` | `/lib/gl-chat-widget` |
-| GLChat Sidebar | `<gl-chat-sidebar>` | [docs/gl-chat-sidebar.md](docs/gl-chat-sidebar.md) | `/standalone/gl-chat-sidebar` | `/lib/gl-chat-sidebar` |
-| GLChat Widget SDK | `window.GLChat` | [docs/gl-chat-widget-sdk.md](docs/gl-chat-widget-sdk.md) | `/standalone/gl-chat-widget-sdk` | `/lib/gl-chat-widget-sdk` |
+| GLChat Widget | `<gl-chat-widget>` | [docs/widget.md](docs/widget.md) | `/standalone/gl-chat-widget` | `/lib/gl-chat-widget` |
+| GLChat Sidebar | `<gl-chat-sidebar>` | [docs/sidebar.md](docs/sidebar.md) | `/standalone/gl-chat-sidebar` | `/lib/gl-chat-sidebar` |
+| GLChat Widget SDK | `window.GLChat` | [docs/bare-iframe.md](docs/bare-iframe.md) | `/standalone/gl-chat-widget-sdk` | `/lib/gl-chat-widget-sdk` |
 | Webcam | `<glair-webcam>` | [Webcam](#webcam) | `/standalone/webcam` | `/lib/webcam` |
 
 ---

@@ -1,7 +1,11 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { getBridge } from "../lib/gl-chat-widget-sdk/bridge";
+import {
+  GLChatHostBridge,
+  claimDefaultBridge,
+  clearDefaultBridge,
+} from "../lib/gl-chat-widget-sdk/bridge";
 import type {
   GLChatContext,
   GLChatIdentity,
@@ -37,6 +41,9 @@ export class GLChatWidget extends LitElement {
 
   @state()
   private parentOverflow: string = "";
+
+  /** One bridge per element instance, so several widgets can coexist. */
+  private readonly sdk = new GLChatHostBridge();
 
   // Static icons (keeping your existing icons unchanged)
   private toggleButtonMinimizedIcon = html`<svg
@@ -476,8 +483,8 @@ export class GLChatWidget extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    // The element API and the `window.GLChat` global share one protocol.
-    getBridge().setWidget(this);
+    this.sdk.init({ widget: this });
+    claimDefaultBridge(this.sdk);
     this.checkIsMobile();
     this.updateViewportHeight();
     window.addEventListener("resize", this.handleResize);
@@ -494,7 +501,8 @@ export class GLChatWidget extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    getBridge().setWidget(null);
+    this.sdk.destroy();
+    clearDefaultBridge(this.sdk);
     window.removeEventListener("resize", this.handleResize);
     window.removeEventListener(
       "orientationchange",
@@ -564,11 +572,8 @@ export class GLChatWidget extends LitElement {
   // protocol for both integration styles.
   // ----------------------------------------------------------------
 
-  /** Bind this element before delegating, so element calls target the right
-   * iframe even when both a widget and a sidebar are on the page. */
-  private getSdk() {
-    getBridge().setWidget(this);
-    return getBridge();
+  private getSdk(): GLChatHostBridge {
+    return this.sdk;
   }
 
   /** Partner SSO login. Sends `{ type: 'auth-idp', token, organization }`. */
