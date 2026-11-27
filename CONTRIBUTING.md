@@ -129,19 +129,23 @@ dedicated HTML page under `test/`.
 ### GLChat widget, sidebar, and SDK
 
 ```sh
-npm run test:widget    # opens /test/widget-sdk.html
-npm run test:sidebar   # opens /test/sidebar-sdk.html
+npm run test:widget       # opens /test/widget-sdk.html
+npm run test:sidebar      # opens /test/sidebar-sdk.html
+npm run test:bare-iframe  # opens /test/bare-iframe-sdk.html
 ```
 
 - `test/widget-sdk.html` loads `<gl-chat-widget>` + the SDK entry from source.
 - `test/sidebar-sdk.html` loads `<gl-chat-sidebar>` + the SDK entry from source.
-- `test/mock-chat.html` is the iframe target. It posts `page-context-ready` on
-  load, records messages received from the host, and forwards them to the host
-  page as `{ type: 'glchat-test:received', payload }` (an unknown event type to
-  the SDK, so it does not interfere).
-- Both harness pages have buttons for every SDK method — both `GLChat.*` and
-  the element facade — and a log showing fired events and messages received by
-  the iframe.
+- `test/bare-iframe-sdk.html` uses only a plain `<iframe>` bound with
+  `GLChat.init({ iframe })` — no web component. `open()` / `close()` /
+  `toggle()` log a warning there because there is no component to control.
+- `test/mock-chat.html` is the iframe target for all three. It posts
+  `page-context-ready` on load, records messages received from the host, and
+  forwards them to the host page as `{ type: 'glchat-test:received', payload }`
+  (an unknown event type to the SDK, so it does not interfere).
+- All harness pages have buttons for every SDK method and a log showing fired
+  events and messages received by the iframe. The widget and sidebar harnesses
+  additionally cover the element facade.
 
 Verification checklist:
 
@@ -154,7 +158,7 @@ Verification checklist:
 - Calls made before ready are queued (put the SDK script before the component
   markup to simulate this) and are delivered after `page-context-ready`.
 - `GLChat.init({ iframe })` works for a bare iframe without a web component
-  (see recipe 4 in `docs/gl-chat-widget-sdk.md`).
+  (`npm run test:bare-iframe`, recipe 4 in `docs/gl-chat-widget-sdk.md`).
 
 ### Adding a new web component
 

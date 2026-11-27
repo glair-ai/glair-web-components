@@ -221,7 +221,8 @@ widget.open();
 
 No `<gl-chat-widget>` here. The host owns the iframe, so bind it explicitly with
 `init()`. `open()` / `close()` / `toggle()` have no component to control in this
-style and log a warning instead.
+style and log a warning instead. A runnable version of this recipe is
+`test/bare-iframe-sdk.html` (`npm run test:bare-iframe`).
 
 ```html
 <!doctype html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test: bare iframe + Widget SDK</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      h1 { font-size: 18px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+      button { padding: 6px 10px; cursor: pointer; }
+      iframe {
+        width: 360px;
+        height: 300px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+      pre { background: #f4f4f4; padding: 10px; min-height: 260px; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>Bare iframe + gl-chat-widget-sdk</h1>
+    <p>Run with <code>npm run test:bare-iframe</code>.</p>
+
+    <div class="controls">
+      <button id="init">init({ iframe })</button>
+      <button id="identity-object">setIdentity(object)</button>
+      <button id="identity-args">setIdentity(token, org)</button>
+      <button id="logout">logout()</button>
+      <button id="set-context">setContext()</button>
+      <button id="update-context">updateContext()</button>
+      <button id="clear-context">clearContext()</button>
+      <button id="open">open()</button>
+      <button id="close">close()</button>
+      <button id="toggle">toggle()</button>
+      <button id="off">off('ready')</button>
+    </div>
+
+    <!-- No <gl-chat-widget> / <gl-chat-sidebar>: the host owns the iframe. -->
+    <!-- src is set in JS after GLChat.init(), so the ready message cannot be
+         missed while the deferred SDK module is still loading. -->
+    <iframe id="glchat-iframe" title="GLChat"></iframe>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import "/src/components/gl-chat-widget-sdk.ts";
+
+      const api = window.GLChat;
+      const log = document.querySelector("#log");
+      const write = (message) => {
+        log.textContent += `${new Date().toISOString().slice(11, 19)} ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+      };
+
+      api.onLoad = () => write("onLoad fired");
+      api.onError = (error) => write(`onError ${error.code}: ${error.message}`);
+      for (const event of [
+        "ready",
+        "authReady",
+        "contextReady",
+        "logoutDone",
+        "error",
+      ]) {
+        api.on(event, (detail) =>
+          write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
+        );
+      }
+      const onReady = () => write("extra 'ready' handler fired");
+      api.on("ready", onReady);
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type === "glchat-test:received") {
+          write(`iframe <- ${JSON.stringify(event.data.payload)}`);
+        }
+      });
+
+      // Bind the explicit iframe; `origin` defaults to the iframe src origin.
+      const iframe = document.querySelector("#glchat-iframe");
+      api.init({
+        iframe,
+        onLoad: () => write("init onLoad option fired"),
+        onError: (error) => write(`init onError option: ${error.code}`),
+      });
+      iframe.src = "/test/mock-chat.html";
+
+      const bind = (id, fn) =>
+        (document.querySelector(`#${id}`).onclick = () => {
+          write(`call ${id}()`);
+          fn();
+        });
+
+      bind("init", () => {
+        api.init({ iframe });
+        iframe.src = "/test/mock-chat.html";
+      });
+      bind("identity-object", () =>
+        api.setIdentity({ token: "demo-token", organization: "acme" }),
+      );
+      bind("identity-args", () => api.setIdentity("demo-token", "acme"));
+      bind("logout", () => api.logout());
+      bind("set-context", () =>
+        api.setContext({
+          page: { route: "bare-iframe.detail", title: "Bare iframe" },
+          entities: [{ type: "contract", id: "CTR-1234", label: "CTR-1234" }],
+          filters: { period: "2026-10" },
+          extra: { source: "harness" },
+        }),
+      );
+      bind("update-context", () =>
+        api.updateContext({ filters: { period: "2026-11" } }),
+      );
+      bind("clear-context", () => api.clearContext());
+      // No web component on this page: these log a warning to the console.
+      bind("open", () => api.open());
+      bind("close", () => api.close());
+      bind("toggle", () => api.toggle());
+      bind("off", () => api.off("ready", onReady));
+
+      write(`SDK v${api.version} ready; target: bare iframe`);
+    </script>
+  </body>
+</html>

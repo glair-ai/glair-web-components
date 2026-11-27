@@ -352,8 +352,12 @@ export class GLChatHostBridge {
 
   private flushPendingMessages(): void {
     const pending = this.pendingMessages.splice(0);
+    // A buffered message may carry a WindowProxy from before the iframe
+    // navigated. Re-validate it against the iframe's current window; the
+    // origin check in handleIncoming still applies.
+    const source = this.iframe?.contentWindow ?? null;
     for (const message of pending) {
-      this.handleIncoming(message.data, message.origin, message.source);
+      this.handleIncoming(message.data, message.origin, source);
     }
   }
 
