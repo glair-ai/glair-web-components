@@ -21,7 +21,12 @@ the bridge, so their element methods need only the component script tag.
 | `clearContext()` | `window.GLChat`, either element | `page-context` with `{}` |
 | `open()` / `close()` / `toggle()` | `window.GLChat`, either element | Opens / closes / toggles the on-page component; on a bare iframe these emit `widget_unavailable` instead |
 | `on(event, handler)` / `off(event, handler)` | `window.GLChat` | Subscribes to `ready`, `authReady`, `contextReady`, `logoutDone`, `error` |
-| `onLoad` / `onError` | `window.GLChat` (assignable properties) | Fires once when ready / on SDK-level errors |
+| `onLoad` / `onError` | `window.GLChat`, returned instance | Fires once when ready / on SDK-level errors |
+
+`onLoad` / `onError` can be assigned on `window.GLChat` before `init()`; they are
+carried over to the instance that `init()` creates. `onLoad` / `onError` passed
+as `init()` options take precedence. `on(event, handler)` subscriptions are
+per-instance — register them on the value returned by `init()`.
 
 Calls made before the iframe is ready are queued (up to 50) and flushed on the
 next `auth-idp-ready` / `page-context-ready` message. The latest context is
@@ -62,7 +67,9 @@ No `<gl-chat-widget>` here. The host owns the iframe, so bind it explicitly with
 `init()`. `open()` / `close()` / `toggle()` have no component UI to control in
 this style: they are no-ops that log a console warning **and** emit
 `onError` / `on('error')` with code `widget_unavailable`, so the host can detect
-and report the misconfiguration. A runnable version of this recipe is
+and report the misconfiguration. If the SDK script loads after the iframe
+markup, set `iframe.src` **after** `init()` so the first `page-context-ready`
+cannot be missed. A runnable version of this recipe is
 `test/gl-chat-bare-iframe.html` (`npm run test:gl-chat-bare-iframe`).
 
 ```html
@@ -80,42 +87,41 @@ and report the misconfiguration. A runnable version of this recipe is
       const api = window.GLChat;
 
       // Bind the iframe. `origin` is optional — it defaults to the iframe src origin.
-      api.init({
+      // The returned value is this iframe's API; register handlers on it.
+      const chat = api.init({
         iframe: document.querySelector("#glchat-iframe"),
         // origin: "https://chat.example.com",
-        onLoad: () => console.log("GLChat ready"),
-        onError: (error) => console.warn(error.code, error.message),
       });
 
-      api.onLoad = () => console.log("GLChat ready");
-      api.onError = (error) => console.warn(error.code, error.message);
+      chat.onLoad = () => console.log("GLChat ready");
+      chat.onError = (error) => console.warn(error.code, error.message);
 
       const onReady = () => console.log("ready");
-      api.on("ready", onReady);
-      api.on("authReady", () => console.log("auth page ready"));
-      api.on("contextReady", () => console.log("chat page ready"));
-      api.on("logoutDone", () => console.log("signed out"));
-      api.on("error", (error) => console.warn(error.code, error.message));
-      api.off("ready", onReady);
+      chat.on("ready", onReady);
+      chat.on("authReady", () => console.log("auth page ready"));
+      chat.on("contextReady", () => console.log("chat page ready"));
+      chat.on("logoutDone", () => console.log("signed out"));
+      chat.on("error", (error) => console.warn(error.code, error.message));
+      chat.off("ready", onReady);
 
-      api.setIdentity({ token: "partner-sso-token", organization: "acme" });
-      api.setIdentity("partner-sso-token", "acme");
-      api.setContext({
+      chat.setIdentity({ token: "partner-sso-token", organization: "acme" });
+      chat.setIdentity("partner-sso-token", "acme");
+      chat.setContext({
         page: { route: "payroll.detail" },
         entities: [{ type: "employee", id: "E-123" }],
         filters: { period: "2026-10" },
         extra: { source: "nui" },
       });
-      api.updateContext({ filters: { period: "2026-11" } });
-      api.clearContext();
+      chat.updateContext({ filters: { period: "2026-11" } });
+      chat.clearContext();
 
       // No <gl-chat-widget> on this page: these log a warning and emit
       // onError({ code: 'widget_unavailable' }).
-      api.open();
-      api.close();
-      api.toggle();
+      chat.open();
+      chat.close();
+      chat.toggle();
 
-      api.logout();
+      chat.logout();
     </script>
   </body>
 </html>

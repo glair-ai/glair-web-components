@@ -143,9 +143,10 @@ dedicated HTML page under `test/`.
   exercised. They work with only the component script tag as well — the bridge
   is bundled into the component.
 - `test/gl-chat-bare-iframe.html` uses only a plain `<iframe>` bound with
-  `GLChat.init({ iframe })`. `open()` / `close()` / `toggle()` are no-ops there:
-  they log a warning and emit `widget_unavailable` because there is no component
-  UI to control.
+  `GLChat.init({ iframe })`. Handlers are wired on the instance returned by
+  `init()`. `open()` / `close()` / `toggle()` are no-ops there: they log a
+  warning and emit `widget_unavailable` because there is no component UI to
+  control.
 - `test/gl-chat-multiple.html` puts two widgets, two sidebars and two bare iframes on
   one page and verifies each instance receives only its own messages with no
   errors (`npm run test:gl-chat-multiple`).
@@ -161,8 +162,9 @@ Verification checklist:
   `clearContext()` appear in the iframe log with the expected wire payload.
 - `open()`, `close()`, `toggle()` work on the widget and sidebar; on a bare
   iframe they emit `widget_unavailable`.
-- Assigning `onLoad` / `onError` and `on(event, handler)` logs callbacks;
-  `off(event, handler)` stops the specific handler.
+- Assigning `onLoad` / `onError` and `on(event, handler)` on the active instance
+  logs callbacks; `off(event, handler)` stops the specific handler. Handlers
+  assigned on `window.GLChat` before `init()` carry over to the new instance.
 - Calls made before ready are queued and delivered after `page-context-ready`.
 - `npm run test:gl-chat-multiple` shows one marker per instance and an empty error list.
 
