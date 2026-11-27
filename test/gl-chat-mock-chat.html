@@ -20,6 +20,7 @@
       <button id="logout-idp-done">logout-idp-done</button>
       <button id="unknown-type">unknown type</button>
       <button id="malformed">malformed JSON</button>
+      <button id="untrusted-source">untrusted source (error)</button>
     </div>
 
     <p>Messages received from the host:</p>
@@ -46,6 +47,18 @@
         postEvent("glchat-test:unknown");
       document.querySelector("#malformed").onclick = () =>
         postToHost("not json");
+
+      // A sandboxed frame has an opaque origin, so its known event type is
+      // rejected by the SDK with code 'origin_untrusted'.
+      document.querySelector("#untrusted-source").onclick = () => {
+        const frame = document.createElement("iframe");
+        frame.sandbox = "allow-scripts";
+        frame.style.display = "none";
+        frame.srcdoc =
+          "<script>top.postMessage(JSON.stringify({ type: 'page-context-ready' }), '*');<\/script>";
+        document.body.appendChild(frame);
+        setTimeout(() => frame.remove(), 500);
+      };
 
       window.addEventListener("message", (event) => {
         let payload;
