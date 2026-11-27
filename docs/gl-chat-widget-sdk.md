@@ -27,11 +27,30 @@ you load the SDK and which facade you call differ.
 | `on(event, handler)` / `off(event, handler)` | `window.GLChat` | Subscribes to `ready`, `authReady`, `contextReady`, `logoutDone`, `error` |
 | `onLoad` / `onError` | `window.GLChat` (assignable properties) | Fires once when ready / on SDK-level errors |
 
-Calls made before the iframe is ready are queued and flushed on the next
-`auth-idp-ready` / `page-context-ready` message. The latest context is replayed
-automatically on every `page-context-ready` (chat page remount). Every example
-below calls the whole API back-to-back purely as a reference tour — a real app
-calls only what the current event needs.
+Calls made before the iframe is ready are queued (up to 50) and flushed on the
+next `auth-idp-ready` / `page-context-ready` message. The latest context is
+replayed automatically on every `page-context-ready` (chat page remount). Page
+context must be JSON-serializable and at most 8 KB. Every example below calls
+the whole API back-to-back purely as a reference tour — a real app calls only
+what the current event needs.
+
+### Security and error handling
+
+The SDK posts only to the exact iframe origin (never `"*"`) and accepts inbound
+messages only from that origin **and** that iframe's `contentWindow`. Host
+origins must be listed in GLChat's trusted event domains. Tokens are never
+logged or attached to error details; the backend must still verify identity and
+validate/sandbox page context before it reaches an agent.
+
+Errors are delivered to `onError` and `on('error')` with a stable `code`:
+
+| Code | Meaning |
+| --- | --- |
+| `widget_unavailable` | No reachable iframe/component, or a post failed. |
+| `origin_untrusted` | A known message arrived from an unexpected source or origin. |
+| `invalid_payload` | Bad `setIdentity` arguments, or non-serializable context. |
+| `too_large` | Page context exceeds 8 KB. |
+| `queue_overflow` | More than 50 calls queued before ready; the oldest was dropped. |
 
 `gl-chat-widget` attributes used in the examples: `url` (iframe src),
 `position` (`left` / `right`), `color-theme`, and `direct-expand-enabled`

@@ -15,6 +15,11 @@ import type {
   GLChatInitOptions,
 } from "./types";
 
+/** Defense in depth: page context is untrusted input that ends up in message
+ * metadata, and calls made before ready must not grow without bound. */
+const MAX_CONTEXT_BYTES = 8 * 1024;
+const MAX_QUEUED_CALLS = 50;
+
 /** The single host-side bridge shared by the `window.GLChat` global and the
  * `<gl-chat-widget>` element methods. There is one protocol, two facades. */
 export class GLChatHostBridge {
@@ -22,7 +27,7 @@ export class GLChatHostBridge {
   private iframe: HTMLIFrameElement | null = null;
   private widget: HTMLElement | null = null;
   private ready = false;
-  private queue: Array<() => void> = [];
+  private queue: Array<{ type: OutboundEvent; send: () => void }> = [];
   /** True when a queued `page-context` send will be flushed on ready. */
   private pendingContext = false;
   private context: GLChatContext = {};
@@ -130,19 +135,16 @@ export class GLChatHostBridge {
         ? { token, organization: organization ?? "" }
         : token;
 
+    // Never attach the identity object to an error: it contains the token and
+    // error details are routinely logged by hosts.
     if (!identity || typeof identity.token !== "string" || !identity.token) {
-      this.emitError(
-        "invalid_payload",
-        "setIdentity requires a token.",
-        identity,
-      );
+      this.emitError("invalid_payload", "setIdentity requires a token.");
       return;
     }
-    if (!identity.organization) {
+    if (typeof identity.organization !== "string" || !identity.organization) {
       this.emitError(
         "invalid_payload",
         "setIdentity requires an organization (partner SSO).",
-        identity,
       );
       return;
     }
@@ -161,13 +163,17 @@ export class GLChatHostBridge {
   /** Replace the whole page context. Mirrors `{ type: 'page-context',
    * pageContext }` consumed by glchat-ui's PageContextListener. */
   setContext(context: GLChatContext): void {
-    this.context = { ...context };
+    const next = { ...context };
+    if (!this.validateContext(next)) return;
+    this.context = next;
     this.post("page-context", { pageContext: this.context });
   }
 
   /** Merge a patch into the current context and send the full object. */
   updateContext(patch: Partial<GLChatContext>): void {
-    this.context = { ...this.context, ...patch };
+    const next = { ...this.context, ...patch };
+    if (!this.validateContext(next)) return;
+    this.context = next;
     this.post("page-context", { pageContext: this.context });
   }
 
@@ -175,6 +181,26 @@ export class GLChatHostBridge {
   clearContext(): void {
     this.context = {};
     this.post("page-context", { pageContext: {} });
+  }
+
+  /** Page context is host-supplied and reaches the agent as data. Keep it
+   * serializable and bounded before it ever crosses the iframe boundary. */
+  private validateContext(context: GLChatContext): boolean {
+    let bytes: number;
+    try {
+      bytes = new TextEncoder().encode(JSON.stringify(context)).length;
+    } catch {
+      this.emitError("invalid_payload", "Page context must be JSON-serializable.");
+      return false;
+    }
+    if (bytes > MAX_CONTEXT_BYTES) {
+      this.emitError(
+        "too_large",
+        `Page context is ${bytes} bytes; the limit is ${MAX_CONTEXT_BYTES}.`,
+      );
+      return false;
+    }
+    return true;
   }
 
   // ------------------------------------------------------------------
@@ -368,7 +394,7 @@ export class GLChatHostBridge {
     const queued = this.queue.splice(0);
     this.pendingContext = false;
     this.emit("ready");
-    for (const send of queued) send();
+    for (const item of queued) item.send();
     if (!this.loadFired) {
       this.loadFired = true;
       this.loadHandler?.();
@@ -379,8 +405,20 @@ export class GLChatHostBridge {
     const send = () => this.send(type, payload);
     this.resolveTarget();
     if (!this.ready) {
+      if (this.queue.length >= MAX_QUEUED_CALLS) {
+        // Drop the oldest call rather than growing memory indefinitely when
+        // the widget never becomes ready.
+        this.queue.shift();
+        this.pendingContext = this.queue.some(
+          (item) => item.type === "page-context",
+        );
+        this.emitError(
+          "queue_overflow",
+          `More than ${MAX_QUEUED_CALLS} calls queued before the widget was ready; the oldest was dropped.`,
+        );
+      }
       if (type === "page-context") this.pendingContext = true;
-      this.queue.push(send);
+      this.queue.push({ type, send });
       return;
     }
     send();

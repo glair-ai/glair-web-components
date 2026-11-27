@@ -78,9 +78,12 @@ Existing components include `<gl-chat-widget>`, `<gl-chat-sidebar>`,
 - Messages are JSON strings sent with an **exact target origin** (never `"*"`).
   Incoming messages are accepted only from the iframe's `contentWindow` and
   that origin. Unknown message types are ignored silently.
-- Calls made before `auth-idp-ready` / `page-context-ready` are queued and
-  flushed on the next ready signal. The latest context is replayed on every
+- Calls made before `auth-idp-ready` / `page-context-ready` are queued (max 50)
+  and flushed on the next ready signal. The latest context is replayed on every
   `page-context-ready` (chat page remount). `onLoad` fires once.
+- Page context is untrusted input: the SDK enforces JSON-serializability and an
+  8 KB cap, and never attaches identity tokens to error details. Keep backend
+  validation and prompt fencing in `glchat-ui`.
 - **Keep the wire protocol in sync with `glchat-ui`** (repo at
   `GDP-ADMIN/glchat`, app under `applications/glchat-ui`):
 

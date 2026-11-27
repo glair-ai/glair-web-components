@@ -29,7 +29,9 @@ export interface GLChatIdentity {
 export type GLChatErrorCode =
   | "widget_unavailable"
   | "origin_untrusted"
-  | "invalid_payload";
+  | "invalid_payload"
+  | "too_large"
+  | "queue_overflow";
 
 export interface GLChatError {
   code: GLChatErrorCode;
