@@ -418,7 +418,8 @@ export class GLChatHostBridge {
     });
   }
 
-  private emitError(
+  /** Report an SDK-level error to `onError` and `on('error')` subscribers. */
+  emitError(
     code: GLChatErrorCode,
     message: string,
     detail?: unknown,

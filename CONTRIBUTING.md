@@ -138,7 +138,8 @@ npm run test:bare-iframe  # opens /test/bare-iframe-sdk.html
 - `test/sidebar-sdk.html` loads `<gl-chat-sidebar>` + the SDK entry from source.
 - `test/bare-iframe-sdk.html` uses only a plain `<iframe>` bound with
   `GLChat.init({ iframe })` — no web component. `open()` / `close()` /
-  `toggle()` log a warning there because there is no component to control.
+  `toggle()` are no-ops there: they log a warning and emit `widget_unavailable`
+  through `onError` / `on('error')` because there is no component UI to control.
 - `test/mock-chat.html` is the iframe target for all three. It posts
   `page-context-ready` on load, records messages received from the host, and
   forwards them to the host page as `{ type: 'glchat-test:received', payload }`

@@ -23,7 +23,7 @@ you load the SDK and which facade you call differ.
 | `setContext(context)` | `window.GLChat`, either element | `page-context` (replaces context) |
 | `updateContext(patch)` | `window.GLChat`, either element | `page-context` (merges patch into current context) |
 | `clearContext()` | `window.GLChat`, either element | `page-context` with `{}` |
-| `open()` / `close()` / `toggle()` | `window.GLChat`, either element | Opens / closes / toggles the on-page component |
+| `open()` / `close()` / `toggle()` | `window.GLChat`, either element | Opens / closes / toggles the on-page component; on a bare iframe these emit `widget_unavailable` instead |
 | `on(event, handler)` / `off(event, handler)` | `window.GLChat` | Subscribes to `ready`, `authReady`, `contextReady`, `logoutDone`, `error` |
 | `onLoad` / `onError` | `window.GLChat` (assignable properties) | Fires once when ready / on SDK-level errors |
 
@@ -220,8 +220,10 @@ widget.open();
 ### 4. Bare iframe (e.g. NUI)
 
 No `<gl-chat-widget>` here. The host owns the iframe, so bind it explicitly with
-`init()`. `open()` / `close()` / `toggle()` have no component to control in this
-style and log a warning instead. A runnable version of this recipe is
+`init()`. `open()` / `close()` / `toggle()` have no component UI to control in
+this style: they are no-ops that log a console warning **and** emit
+`onError` / `on('error')` with code `widget_unavailable`, so the host can detect
+and report the misconfiguration. A runnable version of this recipe is
 `test/bare-iframe-sdk.html` (`npm run test:bare-iframe`).
 
 ```html
@@ -268,7 +270,8 @@ style and log a warning instead. A runnable version of this recipe is
       api.updateContext({ filters: { period: "2026-11" } });
       api.clearContext();
 
-      // No <gl-chat-widget> on this page: these log a warning.
+      // No <gl-chat-widget> on this page: these log a warning and emit
+      // onError({ code: 'widget_unavailable' }).
       api.open();
       api.close();
       api.toggle();

@@ -1,4 +1,4 @@
-import { getBridge } from "./bridge";
+import { getBridge, type GLChatHostBridge } from "./bridge";
 import type {
   GLChatContext,
   GLChatError,
@@ -51,7 +51,10 @@ type ControlElement = HTMLElement & {
   toggle?: () => void;
 };
 
-function control(method: "open" | "close" | "toggle"): void {
+function control(
+  method: "open" | "close" | "toggle",
+  bridge: GLChatHostBridge,
+): void {
   const element = document.querySelector(
     "gl-chat-widget, gl-chat-sidebar",
   ) as ControlElement | null;
@@ -59,9 +62,13 @@ function control(method: "open" | "close" | "toggle"): void {
     element[method]?.();
     return;
   }
-  console.warn(
-    `[GLChat] ${method}() requires <gl-chat-widget> or <gl-chat-sidebar> on the page.`,
-  );
+  // A bare iframe has no UI to control. Tell the host through the documented
+  // error channel, not only via console.warn.
+  const message =
+    `${method}() requires <gl-chat-widget> or <gl-chat-sidebar> on the page. ` +
+    `A bare iframe has no widget UI to open, close or toggle.`;
+  console.warn(`[GLChat] ${message}`);
+  bridge.emitError("widget_unavailable", message);
 }
 
 /**
@@ -120,15 +127,15 @@ export function installGLChatGlobal(): GLChatGlobal {
       return existing;
     },
     open: () => {
-      control("open");
+      control("open", bridge);
       return existing;
     },
     close: () => {
-      control("close");
+      control("close", bridge);
       return existing;
     },
     toggle: () => {
-      control("toggle");
+      control("toggle", bridge);
       return existing;
     },
   };
