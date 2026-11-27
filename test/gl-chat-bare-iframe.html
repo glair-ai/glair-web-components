@@ -52,34 +52,37 @@
         log.scrollTop = log.scrollHeight;
       };
 
-      api.onLoad = () => write("onLoad fired");
-      api.onError = (error) => write(`onError ${error.code}: ${error.message}`);
-      for (const event of [
-        "ready",
-        "authReady",
-        "contextReady",
-        "logoutDone",
-        "error",
-      ]) {
-        api.on(event, (detail) =>
-          write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
-        );
-      }
-      const onReady = () => write("extra 'ready' handler fired");
-      api.on("ready", onReady);
-
       window.addEventListener("message", (event) => {
         if (event.data?.type === "glchat-test:received") {
           write(`iframe <- ${JSON.stringify(event.data.payload)}`);
         }
       });
 
-      // Bind the explicit iframe; `origin` defaults to the iframe src origin.
+      // init() returns the API bound to this iframe. Wire handlers on that
+      // instance, not on window.GLChat, so errors from this iframe are seen.
       const iframe = document.querySelector("#glchat-iframe");
-      // Handler assignment above is the single onLoad / onError channel;
-      // init() also accepts onLoad / onError options (see docs) but passing
-      // them here would replace those handlers.
-      api.init({ iframe });
+      const onReady = () => write("extra 'ready' handler fired");
+
+      function wire(instance) {
+        instance.onLoad = () => write("onLoad fired");
+        instance.onError = (error) =>
+          write(`onError ${error.code}: ${error.message}`);
+        for (const event of [
+          "ready",
+          "authReady",
+          "contextReady",
+          "logoutDone",
+          "error",
+        ]) {
+          instance.on(event, (detail) =>
+            write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
+          );
+        }
+        instance.on("ready", onReady);
+      }
+
+      let chat = api.init({ iframe });
+      wire(chat);
       iframe.src = "/test/gl-chat-mock-chat.html";
 
       const bind = (id, fn) =>
@@ -89,16 +92,17 @@
         });
 
       bind("init", () => {
-        api.init({ iframe });
+        chat = api.init({ iframe });
+        wire(chat);
         iframe.src = "/test/gl-chat-mock-chat.html";
       });
       bind("identity-object", () =>
-        api.setIdentity({ token: "demo-token", organization: "acme" }),
+        chat.setIdentity({ token: "demo-token", organization: "acme" }),
       );
-      bind("identity-args", () => api.setIdentity("demo-token", "acme"));
-      bind("logout", () => api.logout());
+      bind("identity-args", () => chat.setIdentity("demo-token", "acme"));
+      bind("logout", () => chat.logout());
       bind("set-context", () =>
-        api.setContext({
+        chat.setContext({
           page: { route: "bare-iframe.detail", title: "Bare iframe" },
           entities: [{ type: "contract", id: "CTR-1234", label: "CTR-1234" }],
           filters: { period: "2026-10" },
@@ -106,15 +110,15 @@
         }),
       );
       bind("update-context", () =>
-        api.updateContext({ filters: { period: "2026-11" } }),
+        chat.updateContext({ filters: { period: "2026-11" } }),
       );
-      bind("clear-context", () => api.clearContext());
+      bind("clear-context", () => chat.clearContext());
       // No web component on this page: these log a console warning and emit
       // onError / on('error') with code 'widget_unavailable' (visible in the log).
-      bind("open", () => api.open());
-      bind("close", () => api.close());
-      bind("toggle", () => api.toggle());
-      bind("off", () => api.off("ready", onReady));
+      bind("open", () => chat.open());
+      bind("close", () => chat.close());
+      bind("toggle", () => chat.toggle());
+      bind("off", () => chat.off("ready", onReady));
 
       write(`SDK v${api.version} ready; target: bare iframe`);
     </script>

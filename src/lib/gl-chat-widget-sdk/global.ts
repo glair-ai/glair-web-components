@@ -156,7 +156,14 @@ export function installGLChatGlobal(): GLChatGlobal {
 
   existing.init = (options) => {
     // Each call gets its own bridge, so multiple bare iframes are independent.
+    const previous = getBridge();
     const instance = createBridge(options);
+    // Handlers assigned on window.GLChat before init() must still fire after
+    // init() switches the default bridge to this new instance.
+    const loadHandler = previous.getLoadHandler();
+    const errorHandler = previous.getErrorHandler();
+    if (!options?.onLoad && loadHandler) instance.setLoadHandler(loadHandler);
+    if (!options?.onError && errorHandler) instance.setErrorHandler(errorHandler);
     setDefaultBridge(instance);
     return defineFacade({}, () => instance) as GLChatInstance;
   };
