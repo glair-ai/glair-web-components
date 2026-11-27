@@ -155,8 +155,10 @@ dedicated HTML page under `test/`.
   forwards them to the host page as `{ type: 'glchat-test:received', payload }`
   (an unknown event type to the SDK, so it does not interfere). Its buttons fire
   `page-context-ready`, `auth-idp-ready`, `logout-idp-done`, an unknown message
-  type, malformed JSON, and an `origin_untrusted` error (from a sandboxed frame) —
-  use them to verify `on(event, handler)` callbacks in the parent harness.
+  type, and malformed JSON — use them to verify `on(event, handler)` callbacks
+  in the parent harness. Error triggers (`origin_untrusted`, `invalid_payload`,
+  `too_large`, `queue_overflow`) live on the host harness pages, since they are
+  SDK-level validations rather than iframe events.
 
 Verification checklist:
 
@@ -169,8 +171,9 @@ Verification checklist:
   logs callbacks; `off(event, handler)` stops the specific handler. Handlers
   assigned on `window.GLChat` before `init()` carry over to the new instance.
   Click the mock page's event buttons to fire `ready`, `authReady`,
-  `contextReady`, `logoutDone`, and `origin_untrusted`; unknown/malformed
-  messages stay silent.
+  `contextReady`, and `logoutDone`; unknown/malformed messages stay silent.
+  The host harness buttons trigger `origin_untrusted`, `invalid_payload`,
+  `too_large`, and `queue_overflow`.
 - Calls made before ready are queued and delivered after `page-context-ready`.
 - `npm run test:gl-chat-multiple` shows one marker per instance and an empty error list.
 

@@ -31,6 +31,10 @@
       <button id="element-close">widget.close()</button>
       <button id="element-toggle">widget.toggle()</button>
       <button id="off">off('ready')</button>
+      <button id="error-untrusted">error: origin_untrusted</button>
+      <button id="error-invalid">error: invalid_payload</button>
+      <button id="error-large">error: too_large</button>
+      <button id="error-overflow">error: queue_overflow</button>
     </div>
 
     <gl-chat-widget
@@ -44,7 +48,7 @@
     </div>
 
     <script type="module">
-      import "/src/components/gl-chat-widget-sdk.ts";
+      import { createBridge } from "/src/components/gl-chat-widget-sdk.ts";
       import "/src/components/gl-chat-widget.ts";
 
       await customElements.whenDefined("gl-chat-widget");
@@ -111,6 +115,21 @@
       bind("element-close", () => widget().close());
       bind("element-toggle", () => widget().toggle());
       bind("off", () => api.off("ready", onReady));
+
+      // Error triggers live on the host: they are SDK-level validations.
+      bind("error-untrusted", () =>
+        window.postMessage(
+          JSON.stringify({ type: "page-context-ready" }),
+          window.location.origin,
+        ),
+      );
+      bind("error-invalid", () => api.setIdentity("token-without-org"));
+      bind("error-large", () => api.setContext({ huge: "x".repeat(9000) }));
+      bind("error-overflow", () => {
+        const bridge = createBridge();
+        bridge.on("error", (error) => write(`overflow bridge ${error.code}`));
+        for (let i = 0; i < 51; i += 1) bridge.setContext({ i });
+      });
 
       write(`SDK v${api.version} ready; target: ${widget()?.tagName.toLowerCase()}`);
     </script>

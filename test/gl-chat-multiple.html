@@ -6,6 +6,8 @@
     <style>
       body { font: 14px system-ui, sans-serif; margin: 16px; }
       h1 { font-size: 18px; }
+      .events { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+      button { padding: 4px 8px; cursor: pointer; font-size: 12px; }
       iframe { width: 200px; height: 140px; border: 1px solid #ccc; margin: 4px; }
       pre { background: #f4f4f4; padding: 10px; }
     </style>
@@ -13,6 +15,13 @@
   <body>
     <h1>Multiple instances on one page</h1>
     <p>Run with <code>npm run test:gl-chat-multiple</code>.</p>
+
+    <div class="events">
+      <button id="error-untrusted">error: origin_untrusted</button>
+      <button id="error-invalid">error: invalid_payload</button>
+      <button id="error-large">error: too_large</button>
+      <button id="error-overflow">error: queue_overflow</button>
+    </div>
 
     <iframe id="iframe-a" title="GLChat A"></iframe>
     <iframe id="iframe-b" title="GLChat B"></iframe>
@@ -25,7 +34,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import "/src/components/gl-chat-widget-sdk.ts";
+      import { createBridge } from "/src/components/gl-chat-widget-sdk.ts";
       import "/src/components/gl-chat-widget.ts";
       import "/src/components/gl-chat-sidebar.ts";
 
@@ -46,8 +55,14 @@
       const frameB = document.querySelector("#iframe-b");
       const a = window.GLChat.init({ iframe: frameA });
       const b = window.GLChat.init({ iframe: frameB });
-      a.onError = (e) => errors.push(`a: ${e.code}`);
-      b.onError = (e) => errors.push(`b: ${e.code}`);
+      a.onError = (e) => {
+        errors.push(`a: ${e.code}`);
+        write(`a error: ${e.code}`);
+      };
+      b.onError = (e) => {
+        errors.push(`b: ${e.code}`);
+        write(`b error: ${e.code}`);
+      };
 
       // Set src only after init() so the ready signal cannot be missed.
       frameA.src = "/test/gl-chat-mock-chat.html";
@@ -82,6 +97,23 @@
       write(`received ${JSON.stringify(received, null, 2)}`);
       write(`errors ${JSON.stringify(errors)}`);
       window.__result = { received, errors };
+
+      // Error triggers live on the host. They target the most recent init()
+      // instance (b) except queue_overflow, which uses a fresh unready bridge.
+      const bind = (id, fn) => (document.querySelector(`#${id}`).onclick = fn);
+      bind("error-untrusted", () =>
+        window.postMessage(
+          JSON.stringify({ type: "page-context-ready" }),
+          window.location.origin,
+        ),
+      );
+      bind("error-invalid", () => b.setIdentity("token-without-org"));
+      bind("error-large", () => b.setContext({ huge: "x".repeat(9000) }));
+      bind("error-overflow", () => {
+        const bridge = createBridge();
+        bridge.on("error", (error) => write(`overflow bridge ${error.code}`));
+        for (let i = 0; i < 51; i += 1) bridge.setContext({ i });
+      });
     </script>
   </body>
 </html>

@@ -33,6 +33,10 @@
       <button id="close">close()</button>
       <button id="toggle">toggle()</button>
       <button id="off">off('ready')</button>
+      <button id="error-untrusted">error: origin_untrusted</button>
+      <button id="error-invalid">error: invalid_payload</button>
+      <button id="error-large">error: too_large</button>
+      <button id="error-overflow">error: queue_overflow</button>
     </div>
 
     <!-- No <gl-chat-widget> / <gl-chat-sidebar>: the host owns the iframe. -->
@@ -43,7 +47,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import "/src/components/gl-chat-widget-sdk.ts";
+      import { createBridge } from "/src/components/gl-chat-widget-sdk.ts";
 
       const api = window.GLChat;
       const log = document.querySelector("#log");
@@ -119,6 +123,21 @@
       bind("close", () => chat.close());
       bind("toggle", () => chat.toggle());
       bind("off", () => chat.off("ready", onReady));
+
+      // Error triggers live on the host: they are SDK-level validations.
+      bind("error-untrusted", () =>
+        window.postMessage(
+          JSON.stringify({ type: "page-context-ready" }),
+          window.location.origin,
+        ),
+      );
+      bind("error-invalid", () => chat.setIdentity("token-without-org"));
+      bind("error-large", () => chat.setContext({ huge: "x".repeat(9000) }));
+      bind("error-overflow", () => {
+        const bridge = createBridge();
+        bridge.on("error", (error) => write(`overflow bridge ${error.code}`));
+        for (let i = 0; i < 51; i += 1) bridge.setContext({ i });
+      });
 
       write(`SDK v${api.version} ready; target: bare iframe`);
     </script>
