@@ -153,7 +153,10 @@ dedicated HTML page under `test/`.
 - `test/gl-chat-mock-chat.html` is the shared iframe target: it posts
   `page-context-ready` on load, records messages received from the host, and
   forwards them to the host page as `{ type: 'glchat-test:received', payload }`
-  (an unknown event type to the SDK, so it does not interfere).
+  (an unknown event type to the SDK, so it does not interfere). Its buttons fire
+  `page-context-ready`, `auth-idp-ready`, `logout-idp-done`, an unknown message
+  type, and malformed JSON — use them to verify `on(event, handler)` callbacks
+  in the parent harness.
 
 Verification checklist:
 
@@ -165,6 +168,8 @@ Verification checklist:
 - Assigning `onLoad` / `onError` and `on(event, handler)` on the active instance
   logs callbacks; `off(event, handler)` stops the specific handler. Handlers
   assigned on `window.GLChat` before `init()` carry over to the new instance.
+  Click the mock page's event buttons to fire `ready`, `authReady`,
+  `contextReady`, and `logoutDone`; unknown/malformed messages stay silent.
 - Calls made before ready are queued and delivered after `page-context-ready`.
 - `npm run test:gl-chat-multiple` shows one marker per instance and an empty error list.
 
