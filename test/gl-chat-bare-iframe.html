@@ -47,7 +47,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import { createBridge } from "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget-sdk.ts";
 
       const api = window.GLChat;
       const log = document.querySelector("#log");
@@ -134,9 +134,15 @@
       bind("error-invalid", () => chat.setIdentity("token-without-org"));
       bind("error-large", () => chat.setContext({ huge: "x".repeat(9000) }));
       bind("error-overflow", () => {
-        const bridge = createBridge();
-        bridge.on("error", (error) => write(`overflow bridge ${error.code}`));
-        for (let i = 0; i < 51; i += 1) bridge.setContext({ i });
+        // init() returns an independent instance. A detached iframe has no
+        // ready signal, so its calls queue and hit the 50-call cap.
+        const idle = api.init({ iframe: document.createElement("iframe") });
+        idle.on("error", (error) => write(`overflow instance ${error.code}`));
+        for (let i = 0; i < 51; i += 1) idle.setContext({ i });
+        // Restore this harness's iframe as the default target.
+        chat = api.init({ iframe });
+        wire(chat);
+        iframe.src = "/test/gl-chat-mock-chat.html";
       });
 
       write(`SDK v${api.version} ready; target: bare iframe`);

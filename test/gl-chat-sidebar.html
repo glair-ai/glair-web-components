@@ -48,7 +48,7 @@
     </div>
 
     <script type="module">
-      import { createBridge } from "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget-sdk.ts";
       import "/src/components/gl-chat-sidebar.ts";
 
       await customElements.whenDefined("gl-chat-sidebar");
@@ -60,21 +60,26 @@
       };
       const sidebar = () => document.querySelector("gl-chat-sidebar");
 
-      api.onLoad = () => write("onLoad fired");
-      api.onError = (error) => write(`onError ${error.code}: ${error.message}`);
-      for (const event of [
-        "ready",
-        "authReady",
-        "contextReady",
-        "logoutDone",
-        "error",
-      ]) {
-        api.on(event, (detail) =>
-          write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
-        );
-      }
       const onReady = () => write("extra 'ready' handler fired");
-      api.on("ready", onReady);
+
+      function wire(instance) {
+        instance.onLoad = () => write("onLoad fired");
+        instance.onError = (error) =>
+          write(`onError ${error.code}: ${error.message}`);
+        for (const event of [
+          "ready",
+          "authReady",
+          "contextReady",
+          "logoutDone",
+          "error",
+        ]) {
+          instance.on(event, (detail) =>
+            write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
+          );
+        }
+        instance.on("ready", onReady);
+      }
+      wire(api);
 
       window.addEventListener("message", (event) => {
         if (event.data?.type === "glchat-test:received") {
@@ -126,9 +131,16 @@
       bind("error-invalid", () => api.setIdentity("token-without-org"));
       bind("error-large", () => api.setContext({ huge: "x".repeat(9000) }));
       bind("error-overflow", () => {
-        const bridge = createBridge();
-        bridge.on("error", (error) => write(`overflow bridge ${error.code}`));
-        for (let i = 0; i < 51; i += 1) bridge.setContext({ i });
+        // init() returns an independent instance. A detached iframe has no
+        // ready signal, so its calls queue and hit the 50-call cap.
+        const idle = api.init({ iframe: document.createElement("iframe") });
+        idle.on("error", (error) => write(`overflow instance ${error.code}`));
+        for (let i = 0; i < 51; i += 1) idle.setContext({ i });
+        // Restore the page's sidebar as the default target and trigger a new
+        // handshake so the fresh instance is ready.
+        const target = sidebar().shadowRoot.querySelector("iframe");
+        wire(api.init({ iframe: target }));
+        target.src = target.src;
       });
 
       write(`SDK v${api.version} ready; target: ${sidebar()?.tagName.toLowerCase()}`);

@@ -34,7 +34,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import { createBridge } from "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget-sdk.ts";
       import "/src/components/gl-chat-widget.ts";
       import "/src/components/gl-chat-sidebar.ts";
 
@@ -54,15 +54,16 @@
       const frameA = document.querySelector("#iframe-a");
       const frameB = document.querySelector("#iframe-b");
       const a = window.GLChat.init({ iframe: frameA });
-      const b = window.GLChat.init({ iframe: frameB });
-      a.onError = (e) => {
-        errors.push(`a: ${e.code}`);
-        write(`a error: ${e.code}`);
-      };
-      b.onError = (e) => {
-        errors.push(`b: ${e.code}`);
-        write(`b error: ${e.code}`);
-      };
+      let b = window.GLChat.init({ iframe: frameB });
+
+      function wire(instance, label) {
+        instance.onError = (e) => {
+          errors.push(`${label}: ${e.code}`);
+          write(`${label} error: ${e.code}`);
+        };
+      }
+      wire(a, "a");
+      wire(b, "b");
 
       // Set src only after init() so the ready signal cannot be missed.
       frameA.src = "/test/gl-chat-mock-chat.html";
@@ -110,9 +111,17 @@
       bind("error-invalid", () => b.setIdentity("token-without-org"));
       bind("error-large", () => b.setContext({ huge: "x".repeat(9000) }));
       bind("error-overflow", () => {
-        const bridge = createBridge();
-        bridge.on("error", (error) => write(`overflow bridge ${error.code}`));
-        for (let i = 0; i < 51; i += 1) bridge.setContext({ i });
+        // init() returns an independent instance. A detached iframe has no
+        // ready signal, so its calls queue and hit the 50-call cap.
+        const idle = window.GLChat.init({
+          iframe: document.createElement("iframe"),
+        });
+        idle.on("error", (error) => write(`overflow instance ${error.code}`));
+        for (let i = 0; i < 51; i += 1) idle.setContext({ i });
+        // Restore the most recent iframe as the default target.
+        b = window.GLChat.init({ iframe: frameB });
+        wire(b, "b");
+        frameB.src = "/test/gl-chat-mock-chat.html";
       });
     </script>
   </body>
