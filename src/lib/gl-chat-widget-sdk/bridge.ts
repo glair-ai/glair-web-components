@@ -27,6 +27,11 @@ export class GLChatHostBridge {
   private iframe: HTMLIFrameElement | null = null;
   private widget: HTMLElement | null = null;
   private ready = false;
+  /** Readiness is per iframe: switching between a widget and a sidebar must
+   * not force a new handshake with an iframe that already announced it. */
+  private readyIframes = new WeakSet<HTMLIFrameElement>();
+  /** All GLChat iframes on the page, not just the active target. */
+  private knownIframes: HTMLIFrameElement[] = [];
   private queue: Array<{ type: OutboundEvent; send: () => void }> = [];
   /** True when a queued `page-context` send will be flushed on ready. */
   private pendingContext = false;
@@ -48,16 +53,23 @@ export class GLChatHostBridge {
   private loadHandler: (() => void) | null = null;
   private errorHandler: ((error: GLChatError) => void) | null = null;
 
+  /** The message listener is needed even when no SDK entry point is loaded and
+   * the host only uses element methods (e.g. a single standalone component
+   * script). */
+  private ensureListening(): void {
+    if (!this.listening && typeof window !== "undefined") {
+      window.addEventListener("message", this.handleMessage);
+      this.listening = true;
+    }
+  }
+
   /** Start listening and bind to a target. Safe to call repeatedly. */
   init(options: GLChatInitOptions = {}): void {
     if (options.onLoad) this.setLoadHandler(options.onLoad);
     if (options.onError) this.setErrorHandler(options.onError);
     this.options = { ...this.options, ...options };
 
-    if (!this.listening && typeof window !== "undefined") {
-      window.addEventListener("message", this.handleMessage);
-      this.listening = true;
-    }
+    this.ensureListening();
     this.resolveTarget();
     this.watchForTarget();
   }
@@ -65,6 +77,7 @@ export class GLChatHostBridge {
   /** Register the web component instance that owns the iframe. */
   setWidget(widget: HTMLElement | null): void {
     this.widget = widget;
+    this.ensureListening();
     this.resolveTarget();
     this.watchForTarget();
   }
@@ -207,8 +220,29 @@ export class GLChatHostBridge {
   // Target resolution
   // ------------------------------------------------------------------
 
+  /** Track every GLChat iframe on the page so a component that is not the
+   * active target can still record its ready handshake. */
+  private collectKnownIframes(): void {
+    if (typeof document === "undefined") return;
+    const hosts = Array.from(
+      document.querySelectorAll?.("gl-chat-widget, gl-chat-sidebar") ?? [],
+    ) as HTMLElement[];
+    for (const host of hosts) {
+      const frame = host.shadowRoot?.querySelector("iframe");
+      if (frame && !this.knownIframes.includes(frame)) {
+        this.knownIframes.push(frame);
+      }
+    }
+    for (const frame of [this.options.iframe, this.widget?.shadowRoot?.querySelector("iframe")]) {
+      if (frame && !this.knownIframes.includes(frame)) {
+        this.knownIframes.push(frame);
+      }
+    }
+  }
+
   private resolveTarget(): boolean {
     if (typeof document === "undefined") return false;
+    this.collectKnownIframes();
 
     let iframe = this.options.iframe ?? null;
 
@@ -231,8 +265,8 @@ export class GLChatHostBridge {
 
     if (iframe !== this.iframe) {
       this.iframe = iframe;
-      // A different iframe needs a fresh handshake before queued calls are sent.
-      this.ready = false;
+      // Reuse the handshake if this iframe already announced readiness.
+      this.ready = this.readyIframes.has(iframe);
       this.flushPendingMessages();
     }
     return true;
@@ -327,6 +361,17 @@ export class GLChatHostBridge {
     if (!payload || !isKnownEvent(payload.type)) return;
 
     const type = payload.type;
+    this.collectKnownIframes();
+
+    // With both a widget and a sidebar on the page, only one iframe is the
+    // active target. Still record a ready signal from the other one so
+    // switching targets later does not require a new handshake.
+    const known = this.knownIframes.find((frame) => frame.contentWindow === source);
+    if (known && isInboundEvent(type)) {
+      this.readyIframes.add(known);
+      if (known !== this.iframe) return;
+    }
+
     // The chat page may signal ready before the element has rendered its
     // iframe; resolve the target first, then buffer the message if needed.
     this.resolveTarget();
@@ -388,6 +433,7 @@ export class GLChatHostBridge {
   }
 
   private markReady(): void {
+    if (this.iframe) this.readyIframes.add(this.iframe);
     if (this.ready) return;
     this.ready = true;
 

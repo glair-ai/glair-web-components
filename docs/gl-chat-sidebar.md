@@ -69,6 +69,28 @@ sidebar.setContext({ entities: [{ type: "employee", id: "E-123" }] });
 sidebar.open();
 ```
 
+**You do not need to load `gl-chat-widget-sdk.js` for these element calls.**
+The component bundle includes the bridge, so the snippet above works with only
+the `<gl-chat-sidebar>` script tag:
+
+```html
+<script
+  type="module"
+  src="https://unpkg.com/@glair/web-components/standalone/gl-chat-sidebar.js"
+></script>
+
+<gl-chat-sidebar
+  url="https://chat.example.com"
+  position="right"
+  width="375"
+></gl-chat-sidebar>
+```
+
+Loading the SDK script as well adds the `window.GLChat` facade — that is what
+provides `onLoad`, `onError`, `on`/`off`, `init({ iframe })`, and global-method
+calls. Element methods themselves work either way. See
+[test/element-only.html](../test/element-only.html) (`npm run test:element-only`).
+
 ## Behavior notes
 
 - Opening the sidebar adds a matching `margin-left` / `margin-right` to

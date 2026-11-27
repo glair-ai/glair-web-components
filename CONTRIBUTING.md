@@ -70,7 +70,9 @@ Existing components include `<gl-chat-widget>`, `<gl-chat-sidebar>`,
 - The SDK is **one bridge, two facades**. `getBridge()` returns a page-wide
   instance stored under a well-known `Symbol.for(...)` key so separately built
   standalone bundles share it. `window.GLChat` and the element methods delegate
-  to the same bridge.
+  to the same bridge. Component bundles include the bridge and attach its
+  `message` listener on connect, so element methods work without the SDK script;
+  only the global facade requires it.
 - Both components register themselves with the bridge in `connectedCallback`
   and unregister in `disconnectedCallback`. Element methods call
   `setWidget(this)` before delegating so they target the right iframe when both
@@ -132,9 +134,10 @@ dedicated HTML page under `test/`.
 ### GLChat widget, sidebar, and SDK
 
 ```sh
-npm run test:widget       # opens /test/widget-sdk.html
-npm run test:sidebar      # opens /test/sidebar-sdk.html
-npm run test:bare-iframe  # opens /test/bare-iframe-sdk.html
+npm run test:widget        # opens /test/widget-sdk.html
+npm run test:sidebar       # opens /test/sidebar-sdk.html
+npm run test:bare-iframe   # opens /test/bare-iframe-sdk.html
+npm run test:element-only  # opens /test/element-only.html
 ```
 
 - `test/widget-sdk.html` loads `<gl-chat-widget>` + the SDK entry from source.
@@ -143,7 +146,10 @@ npm run test:bare-iframe  # opens /test/bare-iframe-sdk.html
   `GLChat.init({ iframe })` — no web component. `open()` / `close()` /
   `toggle()` are no-ops there: they log a warning and emit `widget_unavailable`
   through `onError` / `on('error')` because there is no component UI to control.
-- `test/mock-chat.html` is the iframe target for all three. It posts
+- `test/element-only.html` loads only the component scripts (no SDK entry) and
+  verifies that element methods on both the widget and the sidebar deliver
+  messages, with `window.GLChat` absent.
+- `test/mock-chat.html` is the iframe target for all four. It posts
   `page-context-ready` on load, records messages received from the host, and
   forwards them to the host page as `{ type: 'glchat-test:received', payload }`
   (an unknown event type to the SDK, so it does not interfere).

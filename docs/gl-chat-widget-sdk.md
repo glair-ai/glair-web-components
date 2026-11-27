@@ -8,10 +8,13 @@ payloads themselves.
 
 The SDK works with both `<gl-chat-widget>` and `<gl-chat-sidebar>` — the global
 `window.GLChat` facade targets whichever GLChat component is on the page, and
-both elements expose the same method set. There are five integration recipes
-below (four loading styles plus a sidebar example). They all use the **same
-bridge**, so the wire protocol and queueing behaviour are identical; only how
-you load the SDK and which facade you call differ.
+both elements expose the same method set. The component bundles include the
+bridge, so **element methods work with only the component script tag**; the SDK
+script is needed for the `window.GLChat` facade, its events, and
+`init({ iframe })`. There are five integration recipes below (four loading
+styles plus a sidebar example). They all use the **same bridge**, so the wire
+protocol and queueing behaviour are identical; only how you load the SDK and
+which facade you call differ.
 
 ### Method and event reference
 

@@ -72,6 +72,13 @@ widget.setContext({ page: { route: "payroll.detail" } });
 widget.open();
 ```
 
+**You do not need to load `gl-chat-widget-sdk.js` for these element calls.**
+The component bundle includes the bridge, so a single
+`/standalone/gl-chat-widget.js` script tag is enough. Loading the SDK script as
+well adds the `window.GLChat` facade (`onLoad`, `onError`, `on`/`off`,
+`init({ iframe })`, global methods). See
+[test/element-only.html](../test/element-only.html) (`npm run test:element-only`).
+
 ## Behavior notes
 
 - On screens ≤ 768 px the panel opens in fullscreen and body scroll is locked
