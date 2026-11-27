@@ -1,5 +1,10 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { getBridge } from "../lib/gl-chat-widget-sdk/bridge";
+import type {
+  GLChatContext,
+  GLChatIdentity,
+} from "../lib/gl-chat-widget-sdk/types";
 
 @customElement("gl-chat-sidebar")
 export class GLChatSidebar extends LitElement {
@@ -230,6 +235,8 @@ export class GLChatSidebar extends LitElement {
   // Lifecycle methods
   connectedCallback() {
     super.connectedCallback();
+    // The element API and the `window.GLChat` global share one protocol.
+    getBridge().setWidget(this);
     this.adjustMainContent();
   }
 
@@ -257,12 +264,69 @@ export class GLChatSidebar extends LitElement {
     if (iframe) iframe.src = this.url;
   }
 
+  // ----------------------------------------------------------------
+  // Host SDK API — element facade over the shared bridge, identical to
+  // <gl-chat-widget>. `window.GLChat` uses the same bridge.
+  // ----------------------------------------------------------------
+
+  private getSdk() {
+    getBridge().setWidget(this);
+    return getBridge();
+  }
+
+  /** Partner SSO login. Sends `{ type: 'auth-idp', token, organization }`. */
+  setIdentity(token: string | GLChatIdentity, organization?: string): void {
+    this.getSdk().setIdentity(token, organization);
+  }
+
+  /** Partner SSO logout. Sends `{ type: 'logout-idp' }`. */
+  logout(): void {
+    this.getSdk().logout();
+  }
+
+  /** Replace the page context. Sends `{ type: 'page-context', pageContext }`. */
+  setContext(context: GLChatContext): void {
+    this.getSdk().setContext(context);
+  }
+
+  /** Merge a patch into the current page context. */
+  updateContext(patch: Partial<GLChatContext>): void {
+    this.getSdk().updateContext(patch);
+  }
+
+  /** Clear the page context so stale data is not carried into new messages. */
+  clearContext(): void {
+    this.getSdk().clearContext();
+  }
+
+  /** Host SDK: open the sidebar. */
+  open(): void {
+    this.setOpen(true);
+  }
+
+  /** Host SDK: close the sidebar. */
+  close(): void {
+    this.setOpen(false);
+  }
+
+  /** Host SDK: toggle the sidebar. */
+  toggle(): void {
+    this.setOpen(!this.isOpen);
+  }
+
   private toggleSidebar(): void {
-    this.isOpen = !this.isOpen;
+    this.setOpen(!this.isOpen);
+  }
+
+  private setOpen(open: boolean): void {
+    if (this.isOpen === open) return;
+    this.isOpen = open;
 
     const toggleButton = this.renderRoot.querySelector(
       ".sidebar-toggle-button"
-    ) as HTMLElement;
+    ) as HTMLElement | null;
+
+    if (!toggleButton) return;
 
     if (this.position === "left") {
       toggleButton.style.left = `${(this.isOpen ? this.width : 0) + 16}px`;
@@ -339,6 +403,7 @@ export class GLChatSidebar extends LitElement {
   }
 
   disconnectedCallback() {
+    getBridge().setWidget(null);
     // Reset main content margins when component is removed
     document.body.style.marginLeft = "0";
     document.body.style.marginRight = "0";

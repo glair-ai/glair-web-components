@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mock GLChat page</title>
+    <style>
+      body { font: 13px system-ui, sans-serif; padding: 12px; }
+      pre { white-space: pre-wrap; word-break: break-all; }
+    </style>
+  </head>
+  <body>
+    <p><strong>Mock GLChat chat page</strong></p>
+    <p>Messages received from the host:</p>
+    <pre id="received">(none)</pre>
+
+    <script>
+      window.__received = [];
+      window.addEventListener("message", (event) => {
+        let payload;
+        try {
+          payload = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        window.__received.push(payload);
+        document.querySelector("#received").textContent = JSON.stringify(
+          window.__received,
+          null,
+          2,
+        );
+        // Unknown event type: the SDK ignores it, the harness logs it.
+        window.parent.postMessage(
+          { type: "glchat-test:received", payload },
+          "*",
+        );
+      });
+      window.parent.postMessage(
+        JSON.stringify({ type: "page-context-ready" }),
+        "*",
+      );
+    </script>
+  </body>
+</html>

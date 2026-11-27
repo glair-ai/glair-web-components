@@ -135,11 +135,25 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ---
 
+## GLChat Widget SDK
+
+`gl-chat-widget-sdk` exposes a tawk.to-style `window.GLChat` object for talking
+to the chat iframe. It works with both `<gl-chat-widget>` and
+`<gl-chat-sidebar>`.
+
+See the full API reference and five integration recipes in
+**[docs/gl-chat-widget-sdk.md](docs/gl-chat-widget-sdk.md)**.
+
+---
+
 ## List of GLAIR Web Components
 
-| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                                             |
-| --- | ----------------- | ---------------- | -------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit GLAIR Web Component Sample – Webcam](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/glair-web-component-sample-webcam-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
+| Name | Tag | Docs | `<script>` | ES Module |
+| --- | --- | --- | --- | --- |
+| GLChat Widget | `<gl-chat-widget>` | [docs/gl-chat-widget.md](docs/gl-chat-widget.md) | `/standalone/gl-chat-widget` | `/lib/gl-chat-widget` |
+| GLChat Sidebar | `<gl-chat-sidebar>` | [docs/gl-chat-sidebar.md](docs/gl-chat-sidebar.md) | `/standalone/gl-chat-sidebar` | `/lib/gl-chat-sidebar` |
+| GLChat Widget SDK | `window.GLChat` | [docs/gl-chat-widget-sdk.md](docs/gl-chat-widget-sdk.md) | `/standalone/gl-chat-widget-sdk` | `/lib/gl-chat-widget-sdk` |
+| Webcam | `<glair-webcam>` | [Webcam](#webcam) | `/standalone/webcam` | `/lib/webcam` |
 
 ---
 

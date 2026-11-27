@@ -34,6 +34,8 @@
   ],
   "scripts": {
     "dev": "vite",
+    "test:widget": "vite --open /test/widget-sdk.html",
+    "test:sidebar": "vite --open /test/sidebar-sdk.html",
     "clean": "rm -rf ./lib ./standalone",
     "move-declaration": "mv lib/components/* lib/ && rm -rf lib/components lib/utils",
     "build-standalone": "node build-standalone.js",

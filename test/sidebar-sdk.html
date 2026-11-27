@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test: gl-chat-sidebar + Widget SDK</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      h1 { font-size: 18px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+      button { padding: 6px 10px; cursor: pointer; }
+      .panel { display: flex; gap: 16px; }
+      pre { background: #f4f4f4; padding: 10px; flex: 1; min-height: 300px; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>gl-chat-sidebar + gl-chat-widget-sdk</h1>
+    <p>Run with <code>npm run test:sidebar</code>.</p>
+
+    <div class="controls">
+      <button id="identity-object">setIdentity(object)</button>
+      <button id="identity-args">setIdentity(token, org)</button>
+      <button id="logout">logout()</button>
+      <button id="set-context">setContext()</button>
+      <button id="update-context">updateContext()</button>
+      <button id="clear-context">clearContext()</button>
+      <button id="open">GLChat.open()</button>
+      <button id="close">GLChat.close()</button>
+      <button id="toggle">GLChat.toggle()</button>
+      <button id="element-context">sidebar.setContext()</button>
+      <button id="element-open">sidebar.open()</button>
+      <button id="element-close">sidebar.close()</button>
+      <button id="element-toggle">sidebar.toggle()</button>
+      <button id="off">off('ready')</button>
+    </div>
+
+    <gl-chat-sidebar
+      url="/test/mock-chat.html"
+      position="right"
+      width="375"
+    ></gl-chat-sidebar>
+
+    <div class="panel">
+      <pre id="log"></pre>
+    </div>
+
+    <script type="module">
+      import "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-sidebar.ts";
+
+      await customElements.whenDefined("gl-chat-sidebar");
+      const api = window.GLChat;
+      const log = document.querySelector("#log");
+      const write = (message) => {
+        log.textContent += `${new Date().toISOString().slice(11, 19)} ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+      };
+      const sidebar = () => document.querySelector("gl-chat-sidebar");
+
+      api.onLoad = () => write("onLoad fired");
+      api.onError = (error) => write(`onError ${error.code}: ${error.message}`);
+      for (const event of [
+        "ready",
+        "authReady",
+        "contextReady",
+        "logoutDone",
+        "error",
+      ]) {
+        api.on(event, (detail) =>
+          write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
+        );
+      }
+      const onReady = () => write("extra 'ready' handler fired");
+      api.on("ready", onReady);
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type === "glchat-test:received") {
+          write(`iframe <- ${JSON.stringify(event.data.payload)}`);
+        }
+      });
+
+      const bind = (id, fn) =>
+        (document.querySelector(`#${id}`).onclick = () => {
+          write(`call ${id}()`);
+          fn();
+        });
+
+      bind("identity-object", () =>
+        api.setIdentity({ token: "demo-token", organization: "acme" }),
+      );
+      bind("identity-args", () => api.setIdentity("demo-token", "acme"));
+      bind("logout", () => api.logout());
+      bind("set-context", () =>
+        api.setContext({
+          page: { route: "contract.detail", title: "Contract" },
+          entities: [{ type: "contract", id: "CTR-1234", label: "CTR-1234" }],
+          filters: { period: "2026-10" },
+          extra: { source: "harness" },
+        }),
+      );
+      bind("update-context", () =>
+        api.updateContext({ filters: { period: "2026-11" } }),
+      );
+      bind("clear-context", () => api.clearContext());
+      bind("open", () => api.open());
+      bind("close", () => api.close());
+      bind("toggle", () => api.toggle());
+      bind("element-context", () =>
+        sidebar().setContext({ page: { route: "from-element" } }),
+      );
+      bind("element-open", () => sidebar().open());
+      bind("element-close", () => sidebar().close());
+      bind("element-toggle", () => sidebar().toggle());
+      bind("off", () => api.off("ready", onReady));
+
+      write(`SDK v${api.version} ready; target: ${sidebar()?.tagName.toLowerCase()}`);
+    </script>
+  </body>
+</html>

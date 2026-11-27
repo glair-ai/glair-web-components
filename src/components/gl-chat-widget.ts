@@ -1,6 +1,11 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { getBridge } from "../lib/gl-chat-widget-sdk/bridge";
+import type {
+  GLChatContext,
+  GLChatIdentity,
+} from "../lib/gl-chat-widget-sdk/types";
 
 @customElement("gl-chat-widget")
 export class GLChatWidget extends LitElement {
@@ -471,6 +476,8 @@ export class GLChatWidget extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
+    // The element API and the `window.GLChat` global share one protocol.
+    getBridge().setWidget(this);
     this.checkIsMobile();
     this.updateViewportHeight();
     window.addEventListener("resize", this.handleResize);
@@ -487,6 +494,7 @@ export class GLChatWidget extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    getBridge().setWidget(null);
     window.removeEventListener("resize", this.handleResize);
     window.removeEventListener(
       "orientationchange",
@@ -548,6 +556,56 @@ export class GLChatWidget extends LitElement {
       ".chat-iframe"
     ) as HTMLIFrameElement;
     if (iframe) iframe.src = this.url;
+  }
+
+  // ----------------------------------------------------------------
+  // Host SDK API — element facade over the shared bridge. The tawk.to-style
+  // `window.GLChat` global delegates to the same bridge, so there is one
+  // protocol for both integration styles.
+  // ----------------------------------------------------------------
+
+  /** Bind this element before delegating, so element calls target the right
+   * iframe even when both a widget and a sidebar are on the page. */
+  private getSdk() {
+    getBridge().setWidget(this);
+    return getBridge();
+  }
+
+  /** Partner SSO login. Sends `{ type: 'auth-idp', token, organization }`. */
+  setIdentity(token: string | GLChatIdentity, organization?: string): void {
+    this.getSdk().setIdentity(token, organization);
+  }
+
+  /** Partner SSO logout. Sends `{ type: 'logout-idp' }`. */
+  logout(): void {
+    this.getSdk().logout();
+  }
+
+  /** Replace the page context. Sends `{ type: 'page-context', pageContext }`. */
+  setContext(context: GLChatContext): void {
+    this.getSdk().setContext(context);
+  }
+
+  /** Merge a patch into the current page context. */
+  updateContext(patch: Partial<GLChatContext>): void {
+    this.getSdk().updateContext(patch);
+  }
+
+  /** Clear the page context so stale data is not carried into new messages. */
+  clearContext(): void {
+    this.getSdk().clearContext();
+  }
+
+  open(): void {
+    this.showWidget();
+  }
+
+  close(): void {
+    this.hideWidget();
+  }
+
+  toggle(): void {
+    this.toggleWidget();
   }
 
   private toggleWidget(): void {
