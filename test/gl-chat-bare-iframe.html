@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test: bare iframe + Widget SDK</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      h1 { font-size: 18px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+      button { padding: 6px 10px; cursor: pointer; }
+      iframe {
+        width: 360px;
+        height: 300px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+      pre { background: #f4f4f4; padding: 10px; min-height: 260px; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>Bare iframe + gl-chat-widget-sdk</h1>
+    <p>Run with <code>npm run test:gl-chat-bare-iframe</code>.</p>
+
+    <div class="controls">
+      <button id="init">init({ iframe })</button>
+      <button id="identity-object">setIdentity(object)</button>
+      <button id="identity-args">setIdentity(token, org)</button>
+      <button id="logout">logout()</button>
+      <button id="set-context">setContext()</button>
+      <button id="update-context">updateContext()</button>
+      <button id="clear-context">clearContext()</button>
+      <button id="open">open()</button>
+      <button id="close">close()</button>
+      <button id="toggle">toggle()</button>
+      <button id="off">off('ready')</button>
+      <button id="error-untrusted">error: origin_untrusted</button>
+      <button id="error-invalid">error: invalid_payload</button>
+      <button id="error-large">error: too_large</button>
+      <button id="error-overflow">error: queue_overflow</button>
+    </div>
+
+    <!-- No <gl-chat-widget> / <gl-chat-sidebar>: the host owns the iframe. -->
+    <!-- src is set in JS after GLChat.init(), so the ready message cannot be
+         missed while the deferred SDK module is still loading. -->
+    <iframe id="glchat-iframe" title="GLChat"></iframe>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import "/src/components/gl-chat-widget-sdk.ts";
+
+      const api = window.GLChat;
+      const log = document.querySelector("#log");
+      const write = (message) => {
+        log.textContent += `${new Date().toISOString().slice(11, 19)} ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+      };
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type === "glchat-test:received") {
+          write(`iframe <- ${JSON.stringify(event.data.payload)}`);
+        }
+      });
+
+      // init() returns the API bound to this iframe. Wire handlers on that
+      // instance, not on window.GLChat, so errors from this iframe are seen.
+      const iframe = document.querySelector("#glchat-iframe");
+      const onReady = () => write("extra 'ready' handler fired");
+
+      function wire(instance) {
+        instance.onLoad = () => write("onLoad fired");
+        instance.onError = (error) =>
+          write(`onError ${error.code}: ${error.message}`);
+        for (const event of [
+          "ready",
+          "authReady",
+          "contextReady",
+          "logoutDone",
+          "error",
+        ]) {
+          instance.on(event, (detail) =>
+            write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
+          );
+        }
+        instance.on("ready", onReady);
+      }
+
+      let chat = api.init({ iframe });
+      wire(chat);
+      iframe.src = "/test/gl-chat-mock-chat.html";
+
+      const bind = (id, fn) =>
+        (document.querySelector(`#${id}`).onclick = () => {
+          write(`call ${id}()`);
+          fn();
+        });
+
+      bind("init", () => {
+        chat = api.init({ iframe });
+        wire(chat);
+        iframe.src = "/test/gl-chat-mock-chat.html";
+      });
+      bind("identity-object", () =>
+        chat.setIdentity({ token: "demo-token", organization: "acme" }),
+      );
+      bind("identity-args", () => chat.setIdentity("demo-token", "acme"));
+      bind("logout", () => chat.logout());
+      bind("set-context", () =>
+        chat.setContext({
+          page: { route: "bare-iframe.detail", title: "Bare iframe" },
+          entities: [{ type: "contract", id: "CTR-1234", label: "CTR-1234" }],
+          filters: { period: "2026-10" },
+          extra: { source: "harness" },
+        }),
+      );
+      bind("update-context", () =>
+        chat.updateContext({ filters: { period: "2026-11" } }),
+      );
+      bind("clear-context", () => chat.clearContext());
+      // No web component on this page: these log a console warning and emit
+      // onError / on('error') with code 'widget_unavailable' (visible in the log).
+      bind("open", () => chat.open());
+      bind("close", () => chat.close());
+      bind("toggle", () => chat.toggle());
+      bind("off", () => chat.off("ready", onReady));
+
+      // Error triggers live on the host: they are SDK-level validations.
+      bind("error-untrusted", () =>
+        window.postMessage(
+          JSON.stringify({ type: "page-context-ready" }),
+          window.location.origin,
+        ),
+      );
+      bind("error-invalid", () => chat.setIdentity("token-without-org"));
+      bind("error-large", () => chat.setContext({ huge: "x".repeat(9000) }));
+      bind("error-overflow", () => {
+        // init() returns an independent instance. A detached iframe has no
+        // ready signal, so its calls queue and hit the 50-call cap.
+        const idle = api.init({ iframe: document.createElement("iframe") });
+        idle.on("error", (error) => write(`overflow instance ${error.code}`));
+        for (let i = 0; i < 51; i += 1) idle.setContext({ i });
+        // Restore this harness's iframe as the default target.
+        chat = api.init({ iframe });
+        wire(chat);
+        iframe.src = "/test/gl-chat-mock-chat.html";
+      });
+
+      write(`SDK v${api.version} ready; target: bare iframe`);
+    </script>
+  </body>
+</html>

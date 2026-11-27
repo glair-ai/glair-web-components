@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test: gl-chat-widget + Widget SDK</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      h1 { font-size: 18px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+      button { padding: 6px 10px; cursor: pointer; }
+      .panel { display: flex; gap: 16px; }
+      pre { background: #f4f4f4; padding: 10px; flex: 1; min-height: 300px; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>gl-chat-widget + gl-chat-widget-sdk</h1>
+    <p>Run with <code>npm run test:gl-chat-widget</code>.</p>
+
+    <div class="controls">
+      <button id="identity-object">setIdentity(object)</button>
+      <button id="identity-args">setIdentity(token, org)</button>
+      <button id="logout">logout()</button>
+      <button id="set-context">setContext()</button>
+      <button id="update-context">updateContext()</button>
+      <button id="clear-context">clearContext()</button>
+      <button id="open">GLChat.open()</button>
+      <button id="close">GLChat.close()</button>
+      <button id="toggle">GLChat.toggle()</button>
+      <button id="element-context">widget.setContext()</button>
+      <button id="element-open">widget.open()</button>
+      <button id="element-close">widget.close()</button>
+      <button id="element-toggle">widget.toggle()</button>
+      <button id="off">off('ready')</button>
+      <button id="error-untrusted">error: origin_untrusted</button>
+      <button id="error-invalid">error: invalid_payload</button>
+      <button id="error-large">error: too_large</button>
+      <button id="error-overflow">error: queue_overflow</button>
+    </div>
+
+    <gl-chat-widget
+      url="/test/gl-chat-mock-chat.html"
+      position="right"
+      color-theme="#00709F"
+    ></gl-chat-widget>
+
+    <div class="panel">
+      <pre id="log"></pre>
+    </div>
+
+    <script type="module">
+      import "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget.ts";
+
+      await customElements.whenDefined("gl-chat-widget");
+      const api = window.GLChat;
+      const log = document.querySelector("#log");
+      const write = (message) => {
+        log.textContent += `${new Date().toISOString().slice(11, 19)} ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+      };
+      const widget = () => document.querySelector("gl-chat-widget");
+
+      const onReady = () => write("extra 'ready' handler fired");
+
+      function wire(instance) {
+        instance.onLoad = () => write("onLoad fired");
+        instance.onError = (error) =>
+          write(`onError ${error.code}: ${error.message}`);
+        for (const event of [
+          "ready",
+          "authReady",
+          "contextReady",
+          "logoutDone",
+          "error",
+        ]) {
+          instance.on(event, (detail) =>
+            write(`event ${event}${detail ? ` ${JSON.stringify(detail)}` : ""}`),
+          );
+        }
+        instance.on("ready", onReady);
+      }
+      wire(api);
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type === "glchat-test:received") {
+          write(`iframe <- ${JSON.stringify(event.data.payload)}`);
+        }
+      });
+
+      const bind = (id, fn) =>
+        (document.querySelector(`#${id}`).onclick = () => {
+          write(`call ${id}()`);
+          fn();
+        });
+
+      bind("identity-object", () =>
+        api.setIdentity({ token: "demo-token", organization: "acme" }),
+      );
+      bind("identity-args", () => api.setIdentity("demo-token", "acme"));
+      bind("logout", () => api.logout());
+      bind("set-context", () =>
+        api.setContext({
+          page: { route: "payroll.detail", title: "Payroll" },
+          entities: [{ type: "employee", id: "E-123", label: "Budi" }],
+          filters: { period: "2026-10" },
+          extra: { source: "harness" },
+        }),
+      );
+      bind("update-context", () =>
+        api.updateContext({ filters: { period: "2026-11" } }),
+      );
+      bind("clear-context", () => api.clearContext());
+      bind("open", () => api.open());
+      bind("close", () => api.close());
+      bind("toggle", () => api.toggle());
+      bind("element-context", () =>
+        widget().setContext({ page: { route: "from-element" } }),
+      );
+      bind("element-open", () => widget().open());
+      bind("element-close", () => widget().close());
+      bind("element-toggle", () => widget().toggle());
+      bind("off", () => api.off("ready", onReady));
+
+      // Error triggers live on the host: they are SDK-level validations.
+      bind("error-untrusted", () =>
+        window.postMessage(
+          JSON.stringify({ type: "page-context-ready" }),
+          window.location.origin,
+        ),
+      );
+      bind("error-invalid", () => api.setIdentity("token-without-org"));
+      bind("error-large", () => api.setContext({ huge: "x".repeat(9000) }));
+      bind("error-overflow", () => {
+        // init() returns an independent instance. A detached iframe has no
+        // ready signal, so its calls queue and hit the 50-call cap.
+        const idle = api.init({ iframe: document.createElement("iframe") });
+        idle.on("error", (error) => write(`overflow instance ${error.code}`));
+        for (let i = 0; i < 51; i += 1) idle.setContext({ i });
+        // Restore the page's widget as the default target and trigger a new
+        // handshake so the fresh instance is ready.
+        const target = widget().shadowRoot.querySelector("iframe");
+        wire(api.init({ iframe: target }));
+        target.src = target.src;
+      });
+
+      write(`SDK v${api.version} ready; target: ${widget()?.tagName.toLowerCase()}`);
+    </script>
+  </body>
+</html>

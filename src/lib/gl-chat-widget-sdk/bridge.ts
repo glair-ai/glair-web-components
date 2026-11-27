@@ -1,0 +1,587 @@
+import {
+  buildMessage,
+  isInboundEvent,
+  isKnownEvent,
+  parseMessage,
+  type OutboundEvent,
+} from "./protocol";
+import type {
+  GLChatContext,
+  GLChatError,
+  GLChatErrorCode,
+  GLChatEventHandler,
+  GLChatEventName,
+  GLChatIdentity,
+  GLChatInitOptions,
+} from "./types";
+
+/** Defense in depth: page context is untrusted input that ends up in message
+ * metadata, and calls made before ready must not grow without bound. */
+const MAX_CONTEXT_BYTES = 8 * 1024;
+const MAX_QUEUED_CALLS = 50;
+
+/** Every GLChat iframe on the page, shared across independently bundled
+ * components and SDK instances. Messages from another GLChat iframe are
+ * ignored silently so multiple instances never report false origin errors. */
+const IFRAMES_KEY = Symbol.for("glair.gl-chat-widget.sdk.iframes");
+const DEFAULT_KEY = Symbol.for("glair.gl-chat-widget.sdk.defaultBridge");
+
+type PageState = Record<symbol, Set<HTMLIFrameElement> | GLChatHostBridge | undefined>;
+
+function pageState(): PageState | null {
+  return typeof window === "undefined"
+    ? null
+    : (window as unknown as PageState);
+}
+
+function registerIframe(iframe: HTMLIFrameElement): void {
+  const state = pageState();
+  if (!state) return;
+  let frames = state[IFRAMES_KEY] as Set<HTMLIFrameElement> | undefined;
+  if (!frames) {
+    frames = new Set<HTMLIFrameElement>();
+    state[IFRAMES_KEY] = frames;
+  }
+  frames.add(iframe);
+}
+
+/** True when `source` belongs to a different registered GLChat iframe. */
+function isOtherGLChatIframe(
+  source: MessageEventSource | null,
+  ownIframe: HTMLIFrameElement | null,
+): boolean {
+  const state = pageState();
+  if (!state || !source) return false;
+
+  // A component's iframe may not have been registered yet at the moment a
+  // sibling sends its ready message. Keep the registry in sync.
+  const hosts = Array.from(
+    document.querySelectorAll?.("gl-chat-widget, gl-chat-sidebar") ?? [],
+  ) as HTMLElement[];
+  for (const host of hosts) {
+    const frame = host.shadowRoot?.querySelector("iframe");
+    if (frame) registerIframe(frame);
+  }
+
+  const frames = state[IFRAMES_KEY] as Set<HTMLIFrameElement> | undefined;
+  if (!frames) return false;
+  let other = false;
+  frames.forEach((frame) => {
+    if (frame !== ownIframe && frame.contentWindow === source) other = true;
+  });
+  return other;
+}
+
+/** The single host-side bridge shared by the `window.GLChat` global and the
+ * `<gl-chat-widget>` element methods. There is one protocol, two facades. */
+export class GLChatHostBridge {
+  private options: GLChatInitOptions = {};
+  private iframe: HTMLIFrameElement | null = null;
+  private widget: HTMLElement | null = null;
+  private ready = false;
+  /** Readiness is per iframe: switching between a widget and a sidebar must
+   * not force a new handshake with an iframe that already announced it. */
+  private readyIframes = new WeakSet<HTMLIFrameElement>();
+  private queue: Array<{ type: OutboundEvent; send: () => void }> = [];
+  /** True when a queued `page-context` send will be flushed on ready. */
+  private pendingContext = false;
+  private context: GLChatContext = {};
+  private handlers = new Map<GLChatEventName, Set<GLChatEventHandler>>();
+  private observer: MutationObserver | null = null;
+  private shadowObserver: MutationObserver | null = null;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private retryCount = 0;
+  /** `ready` messages can arrive before Lit has rendered the iframe. */
+  private pendingMessages: Array<{
+    data: unknown;
+    origin: string;
+    source: MessageEventSource | null;
+  }> = [];
+  private listening = false;
+  /** `onLoad` fires once, even when the chat page remounts. */
+  private loadFired = false;
+  private loadHandler: (() => void) | null = null;
+  private errorHandler: ((error: GLChatError) => void) | null = null;
+
+  /** The message listener is needed even when no SDK entry point is loaded and
+   * the host only uses element methods (e.g. a single standalone component
+   * script). */
+  private ensureListening(): void {
+    if (!this.listening && typeof window !== "undefined") {
+      window.addEventListener("message", this.handleMessage);
+      this.listening = true;
+    }
+  }
+
+  /** Start listening and bind to a target. Safe to call repeatedly. */
+  init(options: GLChatInitOptions = {}): void {
+    if (options.onLoad) this.setLoadHandler(options.onLoad);
+    if (options.onError) this.setErrorHandler(options.onError);
+    this.options = { ...this.options, ...options };
+    if (options.widget !== undefined) this.widget = options.widget;
+
+    this.ensureListening();
+    this.resolveTarget();
+    this.watchForTarget();
+  }
+
+  /** Register the web component instance that owns the iframe. */
+  setWidget(widget: HTMLElement | null): void {
+    this.widget = widget;
+    this.ensureListening();
+    this.resolveTarget();
+    this.watchForTarget();
+  }
+
+  /** Drop all listeners and queued calls. Mainly useful in tests / SPAs that
+   * tear down the widget permanently. */
+  destroy(): void {
+    if (this.listening) {
+      window.removeEventListener("message", this.handleMessage);
+      this.listening = false;
+    }
+    this.stopWatching();
+    this.queue = [];
+    this.pendingMessages = [];
+    this.pendingContext = false;
+    this.ready = false;
+    this.loadFired = false;
+    this.widget = null;
+    this.iframe = null;
+  }
+
+  // ------------------------------------------------------------------
+  // Public API (shared by both facades)
+  // ------------------------------------------------------------------
+
+  setLoadHandler(handler: (() => void) | null): void {
+    this.loadHandler = handler;
+    // Assigning onLoad after the widget is ready still fires.
+    if (handler && this.ready) {
+      try {
+        handler();
+      } catch (error) {
+        this.emitError("invalid_payload", "GLChat onLoad handler threw.", error);
+      }
+    }
+  }
+
+  getLoadHandler(): (() => void) | null {
+    return this.loadHandler;
+  }
+
+  setErrorHandler(handler: ((error: GLChatError) => void) | null): void {
+    this.errorHandler = handler;
+  }
+
+  getErrorHandler(): ((error: GLChatError) => void) | null {
+    return this.errorHandler;
+  }
+
+  on(event: GLChatEventName, handler: GLChatEventHandler): void {
+    const set = this.handlers.get(event) ?? new Set<GLChatEventHandler>();
+    set.add(handler);
+    this.handlers.set(event, set);
+  }
+
+  off(event: GLChatEventName, handler: GLChatEventHandler): void {
+    this.handlers.get(event)?.delete(handler);
+  }
+
+  /** Partner SSO login. Mirrors `{ type: 'auth-idp', token, organization }`
+   * consumed by glchat-ui's IDPPage. */
+  setIdentity(
+    token: string | GLChatIdentity,
+    organization?: string,
+  ): void {
+    const identity: GLChatIdentity =
+      typeof token === "string"
+        ? { token, organization: organization ?? "" }
+        : token;
+
+    // Never attach the identity object to an error: it contains the token and
+    // error details are routinely logged by hosts.
+    if (!identity || typeof identity.token !== "string" || !identity.token) {
+      this.emitError("invalid_payload", "setIdentity requires a token.");
+      return;
+    }
+    if (typeof identity.organization !== "string" || !identity.organization) {
+      this.emitError(
+        "invalid_payload",
+        "setIdentity requires an organization (partner SSO).",
+      );
+      return;
+    }
+
+    this.post("auth-idp", {
+      token: identity.token,
+      organization: identity.organization,
+    });
+  }
+
+  /** Partner SSO logout. Mirrors `{ type: 'logout-idp' }`. */
+  logout(): void {
+    this.post("logout-idp");
+  }
+
+  /** Replace the whole page context. Mirrors `{ type: 'page-context',
+   * pageContext }` consumed by glchat-ui's PageContextListener. */
+  setContext(context: GLChatContext): void {
+    const next = { ...context };
+    if (!this.validateContext(next)) return;
+    this.context = next;
+    this.post("page-context", { pageContext: this.context });
+  }
+
+  /** Merge a patch into the current context and send the full object. */
+  updateContext(patch: Partial<GLChatContext>): void {
+    const next = { ...this.context, ...patch };
+    if (!this.validateContext(next)) return;
+    this.context = next;
+    this.post("page-context", { pageContext: this.context });
+  }
+
+  /** Clear the context. Sends an empty object so stale context is not reused. */
+  clearContext(): void {
+    this.context = {};
+    this.post("page-context", { pageContext: {} });
+  }
+
+  /** Page context is host-supplied and reaches the agent as data. Keep it
+   * serializable and bounded before it ever crosses the iframe boundary. */
+  private validateContext(context: GLChatContext): boolean {
+    let bytes: number;
+    try {
+      bytes = new TextEncoder().encode(JSON.stringify(context)).length;
+    } catch {
+      this.emitError("invalid_payload", "Page context must be JSON-serializable.");
+      return false;
+    }
+    if (bytes > MAX_CONTEXT_BYTES) {
+      this.emitError(
+        "too_large",
+        `Page context is ${bytes} bytes; the limit is ${MAX_CONTEXT_BYTES}.`,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  // ------------------------------------------------------------------
+  // Target resolution
+  // ------------------------------------------------------------------
+
+  private resolveTarget(): boolean {
+    if (typeof document === "undefined") return false;
+
+    let iframe = this.options.iframe ?? null;
+
+    if (this.widget) {
+      // Only ever use this element's own iframe. Lit renders it
+      // asynchronously; waiting is better than grabbing a sibling's iframe.
+      iframe = this.widget.shadowRoot?.querySelector("iframe") ?? null;
+      if (!iframe) return false;
+    }
+
+    if (!iframe) {
+      const component = document.querySelector(
+        "gl-chat-widget, gl-chat-sidebar",
+      );
+      iframe = component?.shadowRoot?.querySelector("iframe") ?? null;
+    }
+
+    if (!iframe && this.options.iframeSelector) {
+      iframe = document.querySelector(this.options.iframeSelector);
+    }
+
+    if (!iframe) return false;
+
+    if (iframe !== this.iframe) {
+      this.iframe = iframe;
+      registerIframe(iframe);
+      // Reuse the handshake if this iframe already announced readiness.
+      this.ready = this.readyIframes.has(iframe);
+      this.flushPendingMessages();
+    }
+    return true;
+  }
+
+  private getTargetOrigin(): string {
+    if (this.options.origin) return this.options.origin;
+    const src = this.iframe?.src;
+    if (!src) return "";
+    try {
+      return new URL(src, window.location.href).origin;
+    } catch {
+      return "";
+    }
+  }
+
+  /** Watch for late insertion of the component / iframe. Lit renders the
+   * iframe asynchronously inside a shadow root, so a document observer alone
+   * is not enough — poll briefly as well. */
+  private watchForTarget(): void {
+    if (typeof document === "undefined" || this.iframe) return;
+
+    if (!this.observer) {
+      this.observer = new MutationObserver(() => {
+        if (this.resolveTarget()) {
+          this.stopWatching();
+        } else {
+          this.retryCount = 0;
+          this.scheduleRetry();
+        }
+      });
+      this.observer.observe(document, { childList: true, subtree: true });
+    }
+
+    this.observeShadowRoot();
+    this.scheduleRetry();
+  }
+
+  /** MutationObserver callbacks cannot see inside a shadow root, so observe
+   * the web component's own render root once it exists. */
+  private observeShadowRoot(): void {
+    const host =
+      this.widget ?? document.querySelector("gl-chat-widget, gl-chat-sidebar");
+    const root = host?.shadowRoot;
+    if (!root || this.shadowObserver) return;
+
+    this.shadowObserver = new MutationObserver(() => {
+      if (this.resolveTarget()) this.stopWatching();
+    });
+    this.shadowObserver.observe(root, { childList: true, subtree: true });
+  }
+
+  /** Bounded fallback for frameworks that render after our first check. */
+  private scheduleRetry(): void {
+    if (this.iframe || this.retryTimer || this.retryCount >= 20) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      this.retryCount += 1;
+      if (this.resolveTarget()) {
+        this.stopWatching();
+      } else {
+        this.scheduleRetry();
+      }
+    }, 50);
+  }
+
+  private stopWatching(): void {
+    this.observer?.disconnect();
+    this.observer = null;
+    this.shadowObserver?.disconnect();
+    this.shadowObserver = null;
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Message handling
+  // ------------------------------------------------------------------
+
+  private handleMessage = (event: MessageEvent): void => {
+    this.handleIncoming(event.data, event.origin, event.source);
+  };
+
+  private handleIncoming(
+    data: unknown,
+    origin: string,
+    source: MessageEventSource | null,
+  ): void {
+    const payload = parseMessage(data);
+    if (!payload || !isKnownEvent(payload.type)) return;
+
+    const type = payload.type;
+
+    // Several widgets, sidebars or bare iframes can coexist. Ignore messages
+    // from another GLChat iframe without reporting an error to this host.
+    if (isOtherGLChatIframe(source, this.iframe)) return;
+
+    // The chat page may signal ready before the element has rendered its
+    // iframe; resolve the target first, then buffer the message if needed.
+    this.resolveTarget();
+    const expectedOrigin = this.getTargetOrigin();
+    const iframeSource = this.iframe?.contentWindow ?? null;
+
+    if (!iframeSource || !expectedOrigin) {
+      if (this.pendingMessages.length < 10) {
+        this.pendingMessages.push({ data, origin, source });
+      }
+      return;
+    }
+
+    if (source !== iframeSource || origin !== expectedOrigin) {
+      this.emitError(
+        "origin_untrusted",
+        `Ignored ${type} from an unexpected source or origin.`,
+        { origin },
+      );
+      return;
+    }
+
+    if (!isInboundEvent(type)) return;
+
+    if (type === "auth-idp-ready") {
+      this.markReady();
+      this.emit("authReady");
+      return;
+    }
+
+    if (type === "page-context-ready") {
+      // If a `page-context` call is already queued, flushing it sends the
+      // current context — no need to send the same payload twice.
+      const shouldReplay = !this.pendingContext;
+      this.markReady();
+      this.emit("contextReady");
+      // The chat page announces readiness on every mount, so replay the
+      // latest context instead of relying on the host to re-send it.
+      if (shouldReplay && Object.keys(this.context).length > 0) {
+        this.send("page-context", { pageContext: this.context });
+      }
+      return;
+    }
+
+    if (type === "logout-idp-done") {
+      this.emit("logoutDone");
+    }
+  }
+
+  private flushPendingMessages(): void {
+    const pending = this.pendingMessages.splice(0);
+    // A buffered message may carry a WindowProxy from before the iframe
+    // navigated. Re-validate it against the iframe's current window; the
+    // origin check in handleIncoming still applies.
+    const source = this.iframe?.contentWindow ?? null;
+    for (const message of pending) {
+      this.handleIncoming(message.data, message.origin, source);
+    }
+  }
+
+  private markReady(): void {
+    if (this.iframe) this.readyIframes.add(this.iframe);
+    if (this.ready) return;
+    this.ready = true;
+
+    const queued = this.queue.splice(0);
+    this.pendingContext = false;
+    this.emit("ready");
+    for (const item of queued) item.send();
+    if (!this.loadFired) {
+      this.loadFired = true;
+      this.loadHandler?.();
+    }
+  }
+
+  private post(type: OutboundEvent, payload: Record<string, unknown> = {}): void {
+    const send = () => this.send(type, payload);
+    this.resolveTarget();
+    if (!this.ready) {
+      if (this.queue.length >= MAX_QUEUED_CALLS) {
+        // Drop the oldest call rather than growing memory indefinitely when
+        // the widget never becomes ready.
+        this.queue.shift();
+        this.pendingContext = this.queue.some(
+          (item) => item.type === "page-context",
+        );
+        this.emitError(
+          "queue_overflow",
+          `More than ${MAX_QUEUED_CALLS} calls queued before the widget was ready; the oldest was dropped.`,
+        );
+      }
+      if (type === "page-context") this.pendingContext = true;
+      this.queue.push({ type, send });
+      return;
+    }
+    send();
+  }
+
+  private send(type: OutboundEvent, payload: Record<string, unknown>): void {
+    const iframe = this.iframe;
+    const origin = this.getTargetOrigin();
+    if (!iframe?.contentWindow || !origin) {
+      this.emitError(
+        "widget_unavailable",
+        "GLChat iframe is not available. Embed <gl-chat-widget> or call GLChat.init({ iframe }).",
+      );
+      return;
+    }
+
+    try {
+      iframe.contentWindow.postMessage(buildMessage(type, payload), origin);
+    } catch (error) {
+      this.emitError("widget_unavailable", "Failed to post message to GLChat.", error);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Events / errors
+  // ------------------------------------------------------------------
+
+  private emit(event: GLChatEventName, detail?: unknown): void {
+    this.handlers.get(event)?.forEach((handler) => {
+      try {
+        handler(detail);
+      } catch (error) {
+        console.warn("[GLChat] event handler threw", error);
+      }
+    });
+  }
+
+  /** Report an SDK-level error to `onError` and `on('error')` subscribers. */
+  emitError(
+    code: GLChatErrorCode,
+    message: string,
+    detail?: unknown,
+  ): void {
+    const error: GLChatError = { code, message, detail };
+    this.emit("error", error);
+    try {
+      this.errorHandler?.(error);
+    } catch (handlerError) {
+      console.warn("[GLChat] onError handler threw", handlerError);
+    }
+  }
+}
+
+/** Create an independent bridge for one explicit target. `GLChat.init()` uses
+ * this so multiple bare iframes each get their own API instance. */
+export function createBridge(options: GLChatInitOptions = {}): GLChatHostBridge {
+  const bridge = new GLChatHostBridge();
+  bridge.init(options);
+  return bridge;
+}
+
+/** The default bridge backs `window.GLChat`'s convenience methods and the
+ * first web component on the page. Shared across standalone bundles via a
+ * well-known symbol. */
+export function getBridge(): GLChatHostBridge {
+  const state = pageState();
+  const existing = state?.[DEFAULT_KEY] as GLChatHostBridge | undefined;
+  if (existing) return existing;
+
+  const bridge = new GLChatHostBridge();
+  bridge.init();
+  if (state) state[DEFAULT_KEY] = bridge;
+  return bridge;
+}
+
+/** Change which bridge the global convenience methods target. */
+export function setDefaultBridge(bridge: GLChatHostBridge): void {
+  const state = pageState();
+  if (state) state[DEFAULT_KEY] = bridge;
+}
+
+/** Web components call this so several instances can coexist: the first one
+ * becomes the default, later ones keep their own bridge. */
+export function claimDefaultBridge(bridge: GLChatHostBridge): void {
+  const state = pageState();
+  if (state && !state[DEFAULT_KEY]) state[DEFAULT_KEY] = bridge;
+}
+
+export function clearDefaultBridge(bridge: GLChatHostBridge): void {
+  const state = pageState();
+  if (state && state[DEFAULT_KEY] === bridge) delete state[DEFAULT_KEY];
+}

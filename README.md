@@ -135,11 +135,74 @@ import "@glair/web-components/lib/{web-component-name}";
 
 ---
 
+## Choose a GLChat integration
+
+Pick one of three options. Each supports multiple instances on the same page.
+
+### 1. Widget
+
+Load only the widget component, then use the element API:
+
+```html
+<script type="module" src="https://unpkg.com/@glair/web-components/standalone/gl-chat-widget.js"></script>
+<gl-chat-widget url="https://chat.example.com"></gl-chat-widget>
+```
+
+```js
+const widget = document.querySelector("gl-chat-widget");
+widget.setContext({ page: { route: "payroll.detail" } });
+widget.open();
+```
+
+→ [docs/gl-chat-widget.md](docs/gl-chat-widget.md) · `npm run test:gl-chat-widget`
+
+### 2. Sidebar
+
+Load only the sidebar component, then use the element API:
+
+```html
+<script type="module" src="https://unpkg.com/@glair/web-components/standalone/gl-chat-sidebar.js"></script>
+<gl-chat-sidebar url="https://chat.example.com"></gl-chat-sidebar>
+```
+
+```js
+const sidebar = document.querySelector("gl-chat-sidebar");
+sidebar.setContext({ entities: [{ type: "employee", id: "E-123" }] });
+sidebar.open();
+```
+
+→ [docs/gl-chat-sidebar.md](docs/gl-chat-sidebar.md) · `npm run test:gl-chat-sidebar`
+
+### 3. Bare iframe
+
+Load the SDK and bind each iframe with `GLChat.init()` — the returned value is
+that iframe's API:
+
+```html
+<iframe id="chat" src="https://chat.example.com"></iframe>
+<script type="module" src="https://unpkg.com/@glair/web-components/standalone/gl-chat-widget-sdk.js"></script>
+```
+
+```js
+const chat = window.GLChat.init({ iframe: document.querySelector("#chat") });
+chat.setContext({ page: { route: "payroll.detail" } });
+```
+
+→ [docs/gl-chat-bare-iframe.md](docs/gl-chat-bare-iframe.md) · `npm run test:gl-chat-bare-iframe`
+
+Multiple widgets, sidebars and bare iframes can coexist; see
+`npm run test:gl-chat-multiple`.
+
+---
+
 ## List of GLAIR Web Components
 
-| No  | Name              | Tag              | `<script>`           | ES Module     | Demo                                                                                                                                                                                                             |
-| --- | ----------------- | ---------------- | -------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | [Webcam](#webcam) | `<glair-webcam>` | `/standalone/webcam` | `/lib/webcam` | [![Edit GLAIR Web Component Sample – Webcam](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/glair-web-component-sample-webcam-wkxhpc?fontsize=14&hidenavigation=1&theme=dark) |
+| Name | Tag | Docs | `<script>` | ES Module |
+| --- | --- | --- | --- | --- |
+| GLChat Widget | `<gl-chat-widget>` | [docs/gl-chat-widget.md](docs/gl-chat-widget.md) | `/standalone/gl-chat-widget` | `/lib/gl-chat-widget` |
+| GLChat Sidebar | `<gl-chat-sidebar>` | [docs/gl-chat-sidebar.md](docs/gl-chat-sidebar.md) | `/standalone/gl-chat-sidebar` | `/lib/gl-chat-sidebar` |
+| GLChat Widget SDK | `window.GLChat` | [docs/gl-chat-bare-iframe.md](docs/gl-chat-bare-iframe.md) | `/standalone/gl-chat-widget-sdk` | `/lib/gl-chat-widget-sdk` |
+| Webcam | `<glair-webcam>` | [Webcam](#webcam) | `/standalone/webcam` | `/lib/webcam` |
 
 ---
 

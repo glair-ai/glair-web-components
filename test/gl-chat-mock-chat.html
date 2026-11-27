@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mock GLChat page</title>
+    <style>
+      body { font: 13px system-ui, sans-serif; padding: 12px; }
+      pre { white-space: pre-wrap; word-break: break-all; }
+      .events { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+      button { padding: 4px 8px; cursor: pointer; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <p><strong>Mock GLChat chat page</strong></p>
+
+    <p>Trigger parent-host events:</p>
+    <div class="events">
+      <button id="page-context-ready">page-context-ready</button>
+      <button id="auth-idp-ready">auth-idp-ready</button>
+      <button id="logout-idp-done">logout-idp-done</button>
+      <button id="unknown-type">unknown type</button>
+      <button id="malformed">malformed JSON</button>
+    </div>
+
+    <p>Messages received from the host:</p>
+    <pre id="received">(none)</pre>
+
+    <script>
+      window.__received = [];
+
+      function postToHost(data) {
+        window.parent.postMessage(data, "*");
+      }
+
+      function postEvent(type) {
+        postToHost(JSON.stringify({ type }));
+      }
+
+      document.querySelector("#page-context-ready").onclick = () =>
+        postEvent("page-context-ready");
+      document.querySelector("#auth-idp-ready").onclick = () =>
+        postEvent("auth-idp-ready");
+      document.querySelector("#logout-idp-done").onclick = () =>
+        postEvent("logout-idp-done");
+      document.querySelector("#unknown-type").onclick = () =>
+        postEvent("glchat-test:unknown");
+      document.querySelector("#malformed").onclick = () =>
+        postToHost("not json");
+
+      window.addEventListener("message", (event) => {
+        let payload;
+        try {
+          payload = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        window.__received.push(payload);
+        document.querySelector("#received").textContent = JSON.stringify(
+          window.__received,
+          null,
+          2,
+        );
+        // Unknown event type: the SDK ignores it, the harness logs it.
+        postToHost({ type: "glchat-test:received", payload });
+      });
+
+      // Announce readiness on load, like the real chat page does.
+      postEvent("page-context-ready");
+    </script>
+  </body>
+</html>

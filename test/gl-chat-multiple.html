@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test: multiple widgets, sidebars and bare iframes</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      h1 { font-size: 18px; }
+      .events { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+      button { padding: 4px 8px; cursor: pointer; font-size: 12px; }
+      iframe { width: 200px; height: 140px; border: 1px solid #ccc; margin: 4px; }
+      pre { background: #f4f4f4; padding: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>Multiple instances on one page</h1>
+    <p>Run with <code>npm run test:gl-chat-multiple</code>.</p>
+
+    <div class="events">
+      <button id="error-untrusted">error: origin_untrusted</button>
+      <button id="error-invalid">error: invalid_payload</button>
+      <button id="error-large">error: too_large</button>
+      <button id="error-overflow">error: queue_overflow</button>
+    </div>
+
+    <iframe id="iframe-a" title="GLChat A"></iframe>
+    <iframe id="iframe-b" title="GLChat B"></iframe>
+
+    <gl-chat-widget id="w1" url="/test/gl-chat-mock-chat.html"></gl-chat-widget>
+    <gl-chat-widget id="w2" url="/test/gl-chat-mock-chat.html"></gl-chat-widget>
+    <gl-chat-sidebar id="s1" url="/test/gl-chat-mock-chat.html"></gl-chat-sidebar>
+    <gl-chat-sidebar id="s2" url="/test/gl-chat-mock-chat.html"></gl-chat-sidebar>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import "/src/components/gl-chat-widget-sdk.ts";
+      import "/src/components/gl-chat-widget.ts";
+      import "/src/components/gl-chat-sidebar.ts";
+
+      await Promise.all([
+        customElements.whenDefined("gl-chat-widget"),
+        customElements.whenDefined("gl-chat-sidebar"),
+      ]);
+
+      const log = document.querySelector("#log");
+      const write = (message) => {
+        log.textContent += `${message}\n`;
+      };
+      const errors = [];
+      window.__errors = errors;
+
+      // Each init() returns its own API bound to its own iframe.
+      const frameA = document.querySelector("#iframe-a");
+      const frameB = document.querySelector("#iframe-b");
+      const a = window.GLChat.init({ iframe: frameA });
+      let b = window.GLChat.init({ iframe: frameB });
+
+      function wire(instance, label) {
+        instance.onError = (e) => {
+          errors.push(`${label}: ${e.code}`);
+          write(`${label} error: ${e.code}`);
+        };
+      }
+      wire(a, "a");
+      wire(b, "b");
+
+      // Set src only after init() so the ready signal cannot be missed.
+      frameA.src = "/test/gl-chat-mock-chat.html";
+      frameB.src = "/test/gl-chat-mock-chat.html";
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      a.setContext({ marker: "bare-a" });
+      b.setContext({ marker: "bare-b" });
+      document.querySelector("#w1").setContext({ marker: "widget-1" });
+      document.querySelector("#w2").setContext({ marker: "widget-2" });
+      document.querySelector("#s1").setContext({ marker: "sidebar-1" });
+      document.querySelector("#s2").setContext({ marker: "sidebar-2" });
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const received = {};
+      for (const [name, root] of [
+        ["bare-a", frameA],
+        ["bare-b", frameB],
+        ["widget-1", document.querySelector("#w1")],
+        ["widget-2", document.querySelector("#w2")],
+        ["sidebar-1", document.querySelector("#s1")],
+        ["sidebar-2", document.querySelector("#s2")],
+      ]) {
+        const iframe =
+          root.tagName === "IFRAME" ? root : root.shadowRoot.querySelector("iframe");
+        received[name] = (iframe.contentWindow.__received ?? []).map(
+          (message) => message.pageContext?.marker ?? message.type,
+        );
+      }
+      write(`received ${JSON.stringify(received, null, 2)}`);
+      write(`errors ${JSON.stringify(errors)}`);
+      window.__result = { received, errors };
+
+      // Error triggers live on the host. They target the most recent init()
+      // instance (b) except queue_overflow, which uses a fresh unready bridge.
+      const bind = (id, fn) => (document.querySelector(`#${id}`).onclick = fn);
+      bind("error-untrusted", () =>
+        window.postMessage(
+          JSON.stringify({ type: "page-context-ready" }),
+          window.location.origin,
+        ),
+      );
+      bind("error-invalid", () => b.setIdentity("token-without-org"));
+      bind("error-large", () => b.setContext({ huge: "x".repeat(9000) }));
+      bind("error-overflow", () => {
+        // init() returns an independent instance. A detached iframe has no
+        // ready signal, so its calls queue and hit the 50-call cap.
+        const idle = window.GLChat.init({
+          iframe: document.createElement("iframe"),
+        });
+        idle.on("error", (error) => write(`overflow instance ${error.code}`));
+        for (let i = 0; i < 51; i += 1) idle.setContext({ i });
+        // Restore the most recent iframe as the default target.
+        b = window.GLChat.init({ iframe: frameB });
+        wire(b, "b");
+        frameB.src = "/test/gl-chat-mock-chat.html";
+      });
+    </script>
+  </body>
+</html>
